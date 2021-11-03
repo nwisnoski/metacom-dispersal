@@ -212,7 +212,7 @@ for(x in conditions){
       str_replace_all(":", "")
     
     write_csv(x = dynamics_total, col_names = TRUE, 
-              path = paste0(here("sim_output/total_dyn_",x,"_", tstamp ,".csv")))
+              file = here(paste0("sim_output/",x,"_", tstamp ,".csv")))
     rm(dynamics_total)
     gc()
   }
