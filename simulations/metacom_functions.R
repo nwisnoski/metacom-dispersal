@@ -24,7 +24,7 @@ init_landscape <- function(patches, x_dim = 100, y_dim = 100){
     if(dim(unique(landscape))[1] == patches) {break}
   }
   
-  plot(landscape)
+  # plot(landscape)
   
   return(landscape)
 }
