@@ -20,22 +20,26 @@ gamma_div <- equal %>%
   summarize(gamma = length(unique(species)))
 
 #### 
-alpha_div %>% 
+alpha_fig <- alpha_div %>% 
   ggplot(aes(x = dispersal, y = kernel_exp, z = mean_alpha)) + 
   geom_contour_filled() + 
   facet_wrap(~extirp_prob) +
   theme_bw()
 
-gamma_div %>% 
+gamma_fig <- gamma_div %>% 
   ggplot(aes(x = dispersal, y = kernel_exp, z = gamma)) + 
   geom_contour_filled() + 
   facet_wrap(~extirp_prob) +
   theme_bw()
 
-alpha_div %>% 
+beta_fig <- alpha_div %>% 
   full_join(gamma_div) %>% 
   mutate(beta = gamma / mean_alpha) %>% 
   ggplot(aes(x = dispersal, y = kernel_exp, z = beta)) + 
   geom_contour_filled() +
   facet_wrap(~extirp_prob) + 
   theme_bw()
+
+ggsave(filename = here("figures/alpha.pdf"), plot = alpha_fig, width = 8, height = 6)
+ggsave(filename = here("figures/beta.pdf"), plot = beta_fig, width = 8, height = 6)
+ggsave(filename = here("figures/gamma.pdf"), plot = gamma_fig, width = 8, height = 6)
