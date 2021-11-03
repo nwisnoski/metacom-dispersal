@@ -38,7 +38,7 @@ surv <- 0
 
 params <- expand.grid(disp_rates, kernel_vals, disturbance_rates)
 
-cl <- parallel::makeCluster(23)
+cl <- parallel::makeCluster(8)
 registerDoParallel()
 start_sim <- Sys.time()
 
