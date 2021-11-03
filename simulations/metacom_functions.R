@@ -78,10 +78,10 @@ init_species <- function(species = 10,
     germ = germ
   )
   
-  matplot(sapply(X = 1:species, FUN = function(x) {
-      exp(-((species_traits$env_niche_optima[x]-seq(0, 1, length = 30))/(2*species_traits$env_niche_breadth[x]))^2)
-    })*rep(max_r,each = 30), 
-    type = "l", lty = 1, ylab = "r", xlab = "environment", ylim = c(0,max(max_r)))
+  # matplot(sapply(X = 1:species, FUN = function(x) {
+  #     exp(-((species_traits$env_niche_optima[x]-seq(0, 1, length = 30))/(2*species_traits$env_niche_breadth[x]))^2)
+  #   })*rep(max_r,each = 30), 
+  #   type = "l", lty = 1, ylab = "r", xlab = "environment", ylim = c(0,max(max_r)))
   
   return(species_traits)
 
