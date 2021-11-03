@@ -15,7 +15,7 @@ x_dim <- 100
 y_dim <- 100
 patches <- 100
 species <- 40
-extirp_prob <- 0.000
+#extirp_prob <- 0.000
 
 conditions <- c("equal", "stable", "priority")
 
@@ -31,7 +31,7 @@ kernel_vals <- seq(0, 1, length.out = 10)
 disturbance_rates <- seq(0, 0.1, length.out = 5)
 
 # remove seed bank
-germ <- 0
+germ <- 1
 surv <- 0
 # germ_fracs <- seq(.1,1, length.out = 10)
 # surv_fracs <- c(.1, .5, 1)
@@ -61,7 +61,7 @@ for(x in conditions){
   if(x == "priority"){
     intra = 1
     min_inter = 1
-    max_inter = 5
+    max_inter = 2
     comp_scaler = 0.05
   }
   
