@@ -71,10 +71,10 @@ for(x in conditions){
     # make new landscape, environmental data, and draw new competition coefficients
     landscape <- init_landscape(patches = patches, x_dim = x_dim, y_dim = y_dim)
     env_df <- env_generate(landscape = landscape, env1Scale = 500, 
-                           timesteps = timesteps+burn_in, plot = TRUE)
+                           timesteps = timesteps+burn_in, plot = FALSE)
     int_mat <- species_int_mat(species = species, intra = intra,
                                min_inter = min_inter, max_inter = max_inter,
-                               comp_scaler = comp_scaler, plot = TRUE)
+                               comp_scaler = comp_scaler, plot = FALSE)
     
     
     dynamics_list <- foreach(p = 1:nrow(params), .inorder = FALSE,
