@@ -13,4 +13,4 @@ cd /gscratch/nwisnosk/GitHub/metacom-dispersal
 
 module load swset/2018.05  gcc/7.3.0 r/4.0.5-py27
 
-R CMD BATCH --no-restore --no-save metacom_dispersal_gradient.R
+R CMD BATCH --no-restore --no-save simulations/metacom_dispersal_gradient.R
