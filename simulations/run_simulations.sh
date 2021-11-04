@@ -1,13 +1,13 @@
 #!/bin/bash -l
 
 #SBATCH --account=coexistence
-#SBATCH --time=48:00:00
+#SBATCH --time=96:00:00
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=8
-#SBATCH --mem=16GB
+#SBATCH --cpus-per-task=16
+#SBATCH --mem=64GB
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=nathan.wisnoski@uwyo.edu
-#SBATCH --job-name=metacom
+#SBATCH --job-name=metacom_dispersal_kernel
 
 cd /gscratch/nwisnosk/GitHub/metacom-dispersal
 

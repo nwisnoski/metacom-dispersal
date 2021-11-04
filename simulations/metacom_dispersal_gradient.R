@@ -10,7 +10,7 @@ source(here("simulations/metacom_functions.R"))
 
 
 # define parameters
-nreps <- 1
+nreps <- 10
 x_dim <- 100
 y_dim <- 100
 patches <- 100
@@ -26,8 +26,8 @@ burn_in <- 800
 # run sim
 set.seed(82072)
 
-disp_rates <- 10^seq(-5, 0, length.out = 10)
-kernel_vals <- seq(0, 1, length.out = 10)
+disp_rates <- 10^seq(-5, 0, length.out = 25)
+kernel_vals <- seq(0, 1, length.out = 25)
 disturbance_rates <- seq(0, 0.1, length.out = 5)
 
 # remove seed bank
@@ -38,7 +38,7 @@ surv <- 0
 
 params <- expand.grid(disp_rates, kernel_vals, disturbance_rates)
 
-cl <- parallel::makeCluster(8)
+cl <- parallel::makeCluster(16)
 registerDoParallel()
 start_sim <- Sys.time()
 
