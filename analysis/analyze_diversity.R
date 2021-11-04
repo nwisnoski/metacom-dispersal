@@ -21,10 +21,19 @@ compute_alpha <- function(sim_dat){
 
 compute_gamma <- function(sim_dat){
   gamma_div <- sim_dat %>% 
+    group_by(comp, rep, dispersal, kernel_exp, extirp_prob, species) %>% 
+    summarize(total_abund = sum(N)) %>% 
     group_by(comp, rep, dispersal, kernel_exp, extirp_prob) %>% 
-    filter(N > 0) %>% 
-    summarize(gamma = length(unique(species)))
+    summarize(gamma = sum(1*(total_abund>0)))
   return(gamma_div)
+}
+
+compute_beta <- function(alpha_div, gamma_div){
+  beta_div <- full_join(alpha_div, gamma_div) %>% 
+    mutate(beta = gamma / mean_alpha,
+           beta = ifelse(is.nan(beta), 0, beta))
+  
+  return(beta_div)
 }
 
 
@@ -47,10 +56,8 @@ make_gamma_fig <- function(gamma_div){
   return(gamma_fig)
 }
 
-make_beta_fig <- function(alpha_div, gamma_div){
-  beta_fig <- alpha_div %>% 
-    full_join(gamma_div) %>% 
-    mutate(beta = gamma / mean_alpha) %>% 
+make_beta_fig <- function(beta_div){
+  beta_fig <- beta_div %>% 
     ggplot(aes(x = dispersal, y = kernel_exp, z = beta)) + 
     geom_contour_filled() +
     facet_wrap(~extirp_prob) + 
@@ -68,16 +75,20 @@ equal_gamma <- compute_gamma(equal)
 stable_gamma <- compute_gamma(stable)
 priority_gamma <- compute_gamma(priority)
 
+equal_beta <- compute_beta(equal_alpha, equal_gamma)
+stable_beta <- compute_beta(stable_alpha, stable_gamma)
+priority_beta <- compute_beta(priority_alpha, priority_gamma)
+
 fig_equal_alpha <- make_alpha_fig(equal_alpha)
-fig_equal_beta <- make_beta_fig(equal_alpha, equal_gamma)
+fig_equal_beta <- make_beta_fig(equal_beta)
 fig_equal_gamma <- make_gamma_fig(equal_gamma)
 
 fig_stable_alpha <- make_alpha_fig(stable_alpha)
-fig_stable_beta <- make_beta_fig(stable_alpha, stable_gamma)
+fig_stable_beta <- make_beta_fig(stable_beta)
 fig_stable_gamma <- make_gamma_fig(stable_gamma)
 
 fig_priority_alpha <- make_alpha_fig(priority_alpha)
-fig_priority_beta <- make_beta_fig(priority_alpha, priority_gamma)
+fig_priority_beta <- make_beta_fig(priority_beta)
 fig_priority_gamma <- make_gamma_fig(priority_gamma)
 
 # save figures
