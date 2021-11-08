@@ -1,9 +1,44 @@
 library(tidyverse)
 library(here)
 
-equal <- read_csv(here("sim_output/equal_2021-11-03_162607.csv"))
-stable <- read_csv(here("sim_output/stable_2021-11-03_170641.csv"))
-priority <- read_csv(here("sim_output/priority_2021-11-03_174448.csv"))
+
+# subset by dates
+files <- dir(here("sim_output/")) %>% 
+  tibble() %>% rename("file" = ".") %>% 
+  filter(!str_detect(string = file, pattern = "2021-11-03"))
+
+# subset by competition treatments
+files_equal <- files %>% 
+  filter(str_detect(string = file, pattern = "equal_"))
+files_stable <- files %>% 
+  filter(str_detect(string = file, pattern = "stable_"))
+files_priority <- files %>% 
+  filter(str_detect(string = file, pattern = "priority_"))
+
+equal <- NULL
+stable <- NULL
+priority <- NULL
+
+for (f in files_equal$file) {
+  equal.f <- read_csv(here(paste0("sim_output/",f)))
+  equal <- bind_rows(equal, equal.f)
+  
+}
+
+for (f in files_stable$file) {
+  stable.f <- read_csv(here(paste0("sim_output/",f)))
+  stable <- bind_rows(stable, stable.f)
+  
+}
+
+for (f in files_priority$file) {
+  priority.f <- read_csv(here(paste0("sim_output/",f)))
+  priority <- bind_rows(priority, priority.f)
+  
+}
+# equal <- read_csv(here("sim_output/equal_2021-11-05"))
+# stable <- read_csv(here("sim_output/stable_2021-11-03_170641.csv"))
+# priority <- read_csv(here("sim_output/priority_2021-11-03_174448.csv"))
 
 
 compute_alpha <- function(sim_dat){
@@ -78,6 +113,8 @@ priority_gamma <- compute_gamma(priority)
 equal_beta <- compute_beta(equal_alpha, equal_gamma)
 stable_beta <- compute_beta(stable_alpha, stable_gamma)
 priority_beta <- compute_beta(priority_alpha, priority_gamma)
+
+rm(list = c("equal", "stable", "priority"))
 
 fig_equal_alpha <- make_alpha_fig(equal_alpha)
 fig_equal_beta <- make_beta_fig(equal_beta)
