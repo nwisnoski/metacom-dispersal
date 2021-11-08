@@ -116,6 +116,20 @@ priority_beta <- compute_beta(priority_alpha, priority_gamma)
 
 rm(list = c("equal", "stable", "priority"))
 
+# save intermediate data
+write_csv(equal_alpha, file = here("data/equal_alpha.csv"))
+write_csv(equal_beta, file = here("data/equal_beta.csv"))
+write_csv(equal_gamma, file = here("data/equal_gamma.csv"))
+
+write_csv(stable_alpha, file = here("data/stable_alpha.csv"))
+write_csv(stable_beta, file = here("data/stable_beta.csv"))
+write_csv(stable_gamma, file = here("data/stable_gamma.csv"))
+
+write_csv(priority_alpha, file = here("data/priority_alpha.csv"))
+write_csv(priority_beta, file = here("data/priority_beta.csv"))
+write_csv(priority_gamma, file = here("data/priority_gamma.csv"))
+
+# make figures
 fig_equal_alpha <- make_alpha_fig(equal_alpha)
 fig_equal_beta <- make_beta_fig(equal_beta)
 fig_equal_gamma <- make_gamma_fig(equal_gamma)
