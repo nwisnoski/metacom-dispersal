@@ -28,7 +28,7 @@ set.seed(82072)
 
 disp_rates <- 10^seq(-5, 0, length.out = 25)
 kernel_vals <- seq(0, 1, length.out = 25)
-disturbance_rates <- seq(0, 0.1, length.out = 5)
+disturbance_rates <- seq(0, 0.1, length.out = 3)
 
 # remove seed bank
 germ <- 1
@@ -42,36 +42,38 @@ cl <- parallel::makeCluster(16)
 registerDoParallel()
 start_sim <- Sys.time()
 
-for(x in conditions){
   
-  if(x == "equal"){
-    intra = 1 
-    min_inter = 1 
-    max_inter = 1 
-    comp_scaler = 0.05
-  }
+# for each replicate, rerun parameter sweep
+for(rep in 1:nreps){
   
-  if(x == "stable"){
-    intra = 1 
-    min_inter = 0 
-    max_inter = 1 
-    comp_scaler = 0.05
-  }
+  # make new landscape, environmental data, and draw new competition coefficients
+  landscape <- init_landscape(patches = patches, x_dim = x_dim, y_dim = y_dim)
+  env_df <- env_generate(landscape = landscape, env1Scale = 500, 
+                         timesteps = timesteps+burn_in, plot = FALSE)
   
-  if(x == "priority"){
-    intra = 1
-    min_inter = 1
-    max_inter = 2
-    comp_scaler = 0.05
-  }
   
-  # for each replicate, rerun parameter sweep
-  for(rep in 1:nreps){
+  for(x in conditions){
     
-    # make new landscape, environmental data, and draw new competition coefficients
-    landscape <- init_landscape(patches = patches, x_dim = x_dim, y_dim = y_dim)
-    env_df <- env_generate(landscape = landscape, env1Scale = 500, 
-                           timesteps = timesteps+burn_in, plot = FALSE)
+    if(x == "equal"){
+      intra = 1 
+      min_inter = 1 
+      max_inter = 1 
+      comp_scaler = 0.05
+    }
+    
+    if(x == "stable"){
+      intra = 1 
+      min_inter = 0 
+      max_inter = 1 
+      comp_scaler = 0.05
+    }
+    
+    if(x == "priority"){
+      intra = 1
+      min_inter = 1
+      max_inter = 2
+      comp_scaler = 0.05
+    }
     int_mat <- species_int_mat(species = species, intra = intra,
                                min_inter = min_inter, max_inter = max_inter,
                                comp_scaler = comp_scaler, plot = FALSE)
