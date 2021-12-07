@@ -4,8 +4,9 @@ library(here)
 
 # subset by dates
 files <- dir(here("sim_output/")) %>% 
-  tibble() %>% rename("file" = ".") %>% 
-  filter(!str_detect(string = file, pattern = "2021-11-03"))
+  tibble() %>% rename("file" = ".")
+files <- files %>% 
+  filter(str_detect(string = file, pattern = "2021-11-22|2021-11-23|2021-11-24|2021-11-25"))
 
 # subset by competition treatments
 files_equal <- files %>% 
