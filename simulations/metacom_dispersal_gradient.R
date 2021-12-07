@@ -10,14 +10,14 @@ source(here("simulations/metacom_functions.R"))
 
 
 # define parameters
-nreps <- 10
+nreps <- 5
 x_dim <- 100
 y_dim <- 100
 patches <- 100
 species <- 40
 #extirp_prob <- 0.000
 
-conditions <- c("equal", "stable", "priority")
+conditions <- c("stable", "priority")
 
 timesteps <- 2000
 initialization <- 200
@@ -28,7 +28,7 @@ set.seed(82072)
 
 disp_rates <- 10^seq(-5, 0, length.out = 25)
 kernel_vals <- seq(0, 1, length.out = 25)
-disturbance_rates <- seq(0, 0.1, length.out = 3)
+disturbance_rates <- seq(0, 0.5, length.out = 10)
 
 # remove seed bank
 germ <- 1
