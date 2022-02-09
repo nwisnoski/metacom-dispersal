@@ -60,7 +60,7 @@ div_prior_fig <- diversity %>%
   labs(title = "Priority effects", y = "Diversity", x = "Emigration rate")
 
 # view
-ggsave(filename = "figures/diversity_stable.pdf", plot = div_stable_fig, width = 10, height = 8)
-ggsave(filename = "figures/diversity_equal.pdf", plot = div_equal_fig, width = 10, height = 8)
-ggsave(filename = "figures/diversity_priority.pdf", plot = div_prior_fig, width = 10, height = 8)
+ggsave(filename = here("figures/diversity_stable.pdf"), plot = div_stable_fig, width = 10, height = 8)
+ggsave(filename = here("figures/diversity_equal.pdf"), plot = div_equal_fig, width = 10, height = 8)
+ggsave(filename = here("figures/diversity_priority.pdf"), plot = div_prior_fig, width = 10, height = 8)
 
