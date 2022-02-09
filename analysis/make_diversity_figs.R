@@ -28,7 +28,7 @@ div_equal_fig <- diversity %>%
   geom_line(stat = "smooth", method = "loess", span = 0.75, alpha = 0.75, size = 1, se = FALSE) +
   scale_x_log10() + 
   scale_color_viridis_c() +
-  labs(title = "Equal competition")
+  labs(title = "Equal competition", y = "Diversity", x = "Emigration rate")
 
 
 
@@ -43,7 +43,7 @@ div_stable_fig <- diversity %>%
   geom_line(stat = "smooth", method = "loess", span = 0.75, alpha = 0.75, size = 1, se = FALSE) +
   scale_x_log10() + 
   scale_color_viridis_c() +
-  labs(title = "Stabilizing competition")
+  labs(title = "Stabilizing competition", y = "Diversity", x = "Emigration rate")
 
 
 div_prior_fig <- diversity %>% 
@@ -57,7 +57,7 @@ div_prior_fig <- diversity %>%
   geom_line(stat = "smooth", method = "loess", span = 0.75, alpha = 0.75, size = 1, se = FALSE) +
   scale_x_log10() + 
   scale_color_viridis_c() +
-  labs(title = "Priority effects")
+  labs(title = "Priority effects", y = "Diversity", x = "Emigration rate")
 
 # view
 ggsave(filename = "figures/diversity_stable.pdf", plot = div_stable_fig, width = 10, height = 8)
