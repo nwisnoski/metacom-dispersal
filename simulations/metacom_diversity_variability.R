@@ -7,6 +7,7 @@ library(foreach)
 library(doParallel)
 library(here)
 source(here("simulations/metacom_functions.R"))
+source(here("analysis/metacommunity_variability_partitioning.R"))
 
 
 # define parameters
@@ -19,16 +20,16 @@ species <- 40
 
 conditions <- c("stable", "priority")
 
-timesteps <- 2000
+timesteps <- 100
 initialization <- 200
 burn_in <- 800
 
 # run sim
 set.seed(82072)
 
-disp_rates <- 10^seq(-5, 0, length.out = 25)
-kernel_vals <- seq(0, 1, length.out = 25)
-disturbance_rates <- seq(0, 0.5, length.out = 10)
+disp_rates <- 10^seq(-5, 0, length.out = 2)
+kernel_vals <- seq(0, 1, length.out = 2)
+disturbance_rates <- seq(0, 0.5, length.out = 2)
 
 # remove seed bank
 germ <- 1
@@ -89,6 +90,9 @@ for(rep in 1:nreps){
                                
                                
                                dynamics_out <- data.table()
+                               
+                               # make an output table
+                               output_summary <- data.table()
                                
                                # init_community
                                species_traits <- init_species(species, 
@@ -180,6 +184,7 @@ for(rep in 1:nreps){
                                  
                                  N[rbinom(n = species * patches, size = 1, prob = extirp_prob) > 0] <- 0
                                  
+                                 # At this point, N contains a snapshot of the community at time i
                                  dynamics_i <- data.table(N = c(N),
                                                           patch = 1:patches,
                                                           species = rep(1:species, each = patches),
@@ -189,23 +194,31 @@ for(rep in 1:nreps){
                                                           kernel_exp = kernel_exp,
                                                           extirp_prob = extirp_prob,
                                                           rep = rep,
-                                                          comp = x) %>% 
-                                   filter(time %in% seq(2000, timesteps, by = 20))
+                                                          comp = x) 
                                  
+                                 # add time step i to the full dynamics "dynamics_out"
                                  dynamics_out <- rbind(dynamics_out, 
                                                        dynamics_i)
                                }
                                
-                               # every 20 tsteps?
-                               # dynamics_subset <- dynamics_out %>% 
-                               #   filter(time %in% seq(0, timesteps, by = 20))
+                               # We should have dynamics_out = time series for this run
+                               time_series_i <- dynamics_out %>% filter(time > 0)
                                
-                               #dynamics_total <- rbind(dynamics_total, dynamics_subset)
-                               
-                               #saveRDS(dynamics_out, file = paste0("sim_output/sim_disp",disp,"_germ_",germ,"_surv_",surv,"_maxinter_",max_inter,"_mininter_",min_inter,".rds"))
+                               # here is where do temporal beta and variability paritioning
                                
                                
-                               return(dynamics_out)
+                               # save to output table
+                               # table should contain:
+                               # all the parameters and settings and identifiable for this run
+                               # spatial diversity at final time point (average of last few points?)
+                               # the four variability metrics: population, metapop, community, metacommunity? 
+                               # Do we need to save the synchrony metrics too? 
+                               # temporal beta diversity - BD de caceres and legendre paper
+                               
+                               
+                               # check that "output_summary" is 1 row, and a lot of columns
+                               
+                               return(output_summary)
                              }
     
     dynamics_total <- rbindlist(dynamics_list)
