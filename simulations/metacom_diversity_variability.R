@@ -11,7 +11,7 @@ source(here("analysis/metacommunity_variability_partitioning.R"))
 
 
 # define parameters
-nreps <- 5
+nreps <- 1 #5
 x_dim <- 100
 y_dim <- 100
 patches <- 100
@@ -79,7 +79,7 @@ for(rep in 1:nreps){
                                min_inter = min_inter, max_inter = max_inter,
                                comp_scaler = comp_scaler, plot = FALSE)
     
-    
+    # up until this point, parameters are getting set up for this run 
     dynamics_list <- foreach(p = 1:nrow(params), .inorder = FALSE,
                              .packages = c("tidyverse", "data.table", "stats")) %dopar% {
                                
@@ -90,9 +90,6 @@ for(rep in 1:nreps){
                                
                                
                                dynamics_out <- data.table()
-                               
-                               # make an output table
-                               output_summary <- data.table()
                                
                                # init_community
                                species_traits <- init_species(species, 
@@ -199,26 +196,55 @@ for(rep in 1:nreps){
                                  # add time step i to the full dynamics "dynamics_out"
                                  dynamics_out <- rbind(dynamics_out, 
                                                        dynamics_i)
-                               }
+                               } # end loop calculating N responses for a timeseries
+                               
                                
                                # We should have dynamics_out = time series for this run
                                time_series_i <- dynamics_out %>% filter(time > 0)
-                               
                                # here is where do temporal beta and variability paritioning
                                
+                               metacomm_tsdata <- array() # array N*T*M where N = number of species, T = timeseries, M= patch
+                               # work HERE ####
                                
-                               # save to output table
+                               var.partition(metacomm_tsdata) # make sure I get object returned as partition_3level
+                               
+                               # make an output table (will have to rbind it each conditions)
+                               output_summary <- data.table(
+                                 rep = rep,
+                                 condition = x,
+                                 disp_rate = params[p,1],
+                                 kernel_exp = params[p,2],
+                                 disturb_rate = params[p,3]
+                                 # var_pop = partition_3level$CV_S_L,
+                                 # var_metapop = partition_3level$CV_S_R,
+                                 # var_comm = partition_3level$CV_C_L,
+                                 # var_metacom = partition_3level$CV_C_R,
+                                 # syn_S_L2R = partition_3level$phi_S_L2R,
+                                 # syn_S2C_L = partition_3level$phi_S2C_L,
+                                 # syn_C_L2R = partition_3level$phi_C_L2R,
+                                 # syn_S2C_R = partition_3level$phi_S2C_R
+                                 # add spatial div
+                                 # add beta
+                                 # name columns and how to find them: for each rep in nreps and x in conditions
+                               )
+                               
+                               
+                               # save to output table (might move down  here as some columns aren't calculated yet)
                                # table should contain:
                                # all the parameters and settings and identifiable for this run
-                               # spatial diversity at final time point (average of last few points?)
+                               # rep specific = rep
+                               # condition specific = x 
+                               # responses that are condition specific and calculated using time_series_i: var metrics, synchrony metrics, spatial diversity
+                               # patch specific things: dispersal_rate = disp, disturbance_rate = disturbance_rates, kernel = kernal_vals (don't want to use these because too specific)
+                               # spatial diversity at final time point (average of last few points?), would use time_series_i
                                # the four variability metrics: population, metapop, community, metacommunity? 
-                               # Do we need to save the synchrony metrics too? 
+                               # Do we need to save the synchrony metrics too? - they are outputs so yes
                                # temporal beta diversity - BD de caceres and legendre paper
                                
                                
                                # check that "output_summary" is 1 row, and a lot of columns
                                
-                               return(output_summary)
+                               return(output_summary) # this return means this is final information taken into dynamics_list
                              }
     
     dynamics_total <- rbindlist(dynamics_list)
@@ -233,3 +259,5 @@ for(rep in 1:nreps){
   }
 }
 
+# error Meg got:
+#In file.create(file) : cannot create file 'C:\Users\Megan Szojka\GitHub\metacom-dispersal\sim_output\stable_2022-03-09_150205.csv', reason 'No such file or directory'

@@ -1,0 +1,9 @@
+rep,condition,disp_rate,kernel_exp,disturb_rate
+1,stable,1e-5,0,0
+1,stable,1,0,0
+1,stable,1e-5,1,0
+1,stable,1,1,0
+1,stable,1e-5,0,0.5
+1,stable,1,0,0.5
+1,stable,1e-5,1,0.5
+1,stable,1,1,0.5
