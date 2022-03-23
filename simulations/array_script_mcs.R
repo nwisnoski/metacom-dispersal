@@ -235,17 +235,14 @@ new <- new %>%
 
 new <- new %>%  
   rename(N = V1, patch = V2, species = V3, time = V4) %>%
-  mutate(N = replace(N, N > 0, 1)) %>%
-  pivot_wider(., names_from = "species", values_from = "N") %>% # this form might be all we want, have to check the var.partitioning code
-  dplyr::mutate(rich = rowSums(.[3:6])) %>% # change based on species number
-  dplyr::select(rich, patch, time) # selects richness (N), time (T), and patch (M)
+  filter(time > 0) %>%
+  pivot_wider(., names_from = "time", values_from = "N") # this form might be all we want, have to check the var.partitioning code
 
-# struggling here####
-simplify2array(by(new,new$patch,as.matrix))
-
-array(c(unlist(new), dim = c(length(new$rich), length(new$time), length(new$patch))))
-array(c(new$rich, new$time, new$patch), dim = c(length(new$rich), length(new$time), length(new$patch)))
-metacomm_tsdata <- array() 
-# array N*T*M where N = number of species, T = timeseries, M= patch
-
-
+metacomm_tsdata <- array(NA, c(species, timesteps, patches))# array N*T*M where N = abundance of each species, T = timeseries, M= patch
+for(m in 1:patches){
+  temp <- new %>%
+  dplyr::filter(patch == m) %>%
+  dplyr::select(-species, -patch)
+  metacomm_tsdata[,,m] <- as.matrix(temp)
+}
+par <- var.partition(metacomm_tsdata) # good

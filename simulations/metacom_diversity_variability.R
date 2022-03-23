@@ -11,7 +11,7 @@ source(here("analysis/metacommunity_variability_partitioning.R"))
 
 
 # define parameters
-nreps <- 1 #5
+nreps <- 5
 x_dim <- 100
 y_dim <- 100
 patches <- 100
@@ -197,40 +197,43 @@ for(rep in 1:nreps){
                                  dynamics_out <- rbind(dynamics_out, 
                                                        dynamics_i)
                                } # end loop calculating N responses for a timeseries
-                               
-                               
-                               # We should have dynamics_out = time series for this run
-                               time_series_i <- dynamics_out %>% filter(time > 0)
+
                                # here is where do temporal beta and variability paritioning
                                
-                               metacomm_tsdata <- array() # array N*T*M where N = number of species, T = timeseries, M= patch
+                               new <- dynamics_out %>% 
+                                 dplyr::select(N, patch, species, time) %>%  
+                                 dplyr::filter(time > 0) %>%
+                                 pivot_wider(., names_from = "time", values_from = "N") # this form means species are first dim and time is second dim
                                
+                               metacomm_tsdata <- array(NA, c(species, timesteps, patches)) # array N*T*M where N = abundance of each species, T = timeseries, M= patch
+                               for(m in 1:patches){
+                                 temp <- new %>%
+                                   dplyr::filter(patch == m) %>%
+                                   dplyr::select(-species, -patch)
+                                 metacomm_tsdata[,,m] <- as.matrix(temp)
+                               }
+                               par <- var.partition(metacomm_tsdata)
                                
-                               var.partition(metacomm_tsdata) # make sure I get object returned as partition_3level
-                               
-                               # make an output table (will have to rbind it each conditions)
+                               # make an output table
                                output_summary <- data.table(
                                  rep = rep,
                                  condition = x,
                                  disp_rate = params[p,1],
                                  kernel_exp = params[p,2],
-                                 disturb_rate = params[p,3]
-                                 # var_pop = partition_3level$CV_S_L,
-                                 # var_metapop = partition_3level$CV_S_R,
-                                 # var_comm = partition_3level$CV_C_L,
-                                 # var_metacom = partition_3level$CV_C_R,
-                                 # syn_S_L2R = partition_3level$phi_S_L2R,
-                                 # syn_S2C_L = partition_3level$phi_S2C_L,
-                                 # syn_C_L2R = partition_3level$phi_C_L2R,
-                                 # syn_S2C_R = partition_3level$phi_S2C_R
+                                 disturb_rate = params[p,3],
+                                 CV_S_L = par[1],
+                                 CV_C_L = par[2],
+                                 CV_S_R = par[3],
+                                 CV_C_R = par[4],
+                                 phi_S_L2R = par[5],
+                                 phi_C_L2R = par[6],
+                                 phi_S2C_L = par[7],
+                                 phi_S2C_R = par[8]
                                  # add spatial div
                                  # add beta
-                                 # name columns and how to find them: for each rep in nreps and x in conditions
                                )
                                
-                               
-                               # save to output table (might move down  here as some columns aren't calculated yet)
-                               # table should contain:
+                               # output should contain:
                                # all the parameters and settings and identifiable for this run
                                # rep specific = rep
                                # condition specific = x 
@@ -240,8 +243,7 @@ for(rep in 1:nreps){
                                # the four variability metrics: population, metapop, community, metacommunity? 
                                # Do we need to save the synchrony metrics too? - they are outputs so yes
                                # temporal beta diversity - BD de caceres and legendre paper
-                               
-                          
+ 
                                # check that "output_summary" is 1 row, and a lot of columns
                                
                                return(output_summary) # this return means this is final information taken into dynamics_list
