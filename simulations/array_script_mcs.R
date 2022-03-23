@@ -7,29 +7,28 @@ library(foreach)
 library(doParallel)
 library(here)
 source(here("simulations/metacom_functions.R"))
-source(here("analysis/metacommunity_variability_partitioning.R"))
 
 
 # define parameters
 nreps <- 1 #5
-x_dim <- 100
-y_dim <- 100
-patches <- 100
-species <- 40
+x_dim <- 10
+y_dim <- 10
+patches <- 10
+species <- 4
 #extirp_prob <- 0.000
 
 conditions <- c("stable", "priority")
 
-timesteps <- 100
-initialization <- 200
-burn_in <- 800
+timesteps <- 10
+initialization <- 20
+burn_in <- 80
 
 # run sim
 set.seed(82072)
 
-disp_rates <- 10^seq(-5, 0, length.out = 2)
-kernel_vals <- seq(0, 1, length.out = 2)
-disturbance_rates <- seq(0, 0.5, length.out = 2)
+disp_rates <- 10^seq(-5, 0, length.out = 25)
+kernel_vals <- seq(0, 1, length.out = 25)
+disturbance_rates <- seq(0, 0.5, length.out = 10)
 
 # remove seed bank
 germ <- 1
@@ -79,7 +78,7 @@ for(rep in 1:nreps){
                                min_inter = min_inter, max_inter = max_inter,
                                comp_scaler = comp_scaler, plot = FALSE)
     
-    # up until this point, parameters are getting set up for this run 
+    
     dynamics_list <- foreach(p = 1:nrow(params), .inorder = FALSE,
                              .packages = c("tidyverse", "data.table", "stats")) %dopar% {
                                
@@ -181,7 +180,6 @@ for(rep in 1:nreps){
                                  
                                  N[rbinom(n = species * patches, size = 1, prob = extirp_prob) > 0] <- 0
                                  
-                                 # At this point, N contains a snapshot of the community at time i
                                  dynamics_i <- data.table(N = c(N),
                                                           patch = 1:patches,
                                                           species = rep(1:species, each = patches),
@@ -191,60 +189,22 @@ for(rep in 1:nreps){
                                                           kernel_exp = kernel_exp,
                                                           extirp_prob = extirp_prob,
                                                           rep = rep,
-                                                          comp = x) 
+                                                          comp = x)
                                  
-                                 # add time step i to the full dynamics "dynamics_out"
                                  dynamics_out <- rbind(dynamics_out, 
                                                        dynamics_i)
-                               } # end loop calculating N responses for a timeseries
+                               }
+                               
+                               # every 20 tsteps?
+                               # dynamics_subset <- dynamics_out %>% 
+                               #   filter(time %in% seq(0, timesteps, by = 20))
+                               
+                               #dynamics_total <- rbind(dynamics_total, dynamics_subset)
+                               
+                               #saveRDS(dynamics_out, file = paste0("sim_output/sim_disp",disp,"_germ_",germ,"_surv_",surv,"_maxinter_",max_inter,"_mininter_",min_inter,".rds"))
                                
                                
-                               # We should have dynamics_out = time series for this run
-                               time_series_i <- dynamics_out %>% filter(time > 0)
-                               # here is where do temporal beta and variability paritioning
-                               
-                               metacomm_tsdata <- array() # array N*T*M where N = number of species, T = timeseries, M= patch
-                               
-                               
-                               var.partition(metacomm_tsdata) # make sure I get object returned as partition_3level
-                               
-                               # make an output table (will have to rbind it each conditions)
-                               output_summary <- data.table(
-                                 rep = rep,
-                                 condition = x,
-                                 disp_rate = params[p,1],
-                                 kernel_exp = params[p,2],
-                                 disturb_rate = params[p,3]
-                                 # var_pop = partition_3level$CV_S_L,
-                                 # var_metapop = partition_3level$CV_S_R,
-                                 # var_comm = partition_3level$CV_C_L,
-                                 # var_metacom = partition_3level$CV_C_R,
-                                 # syn_S_L2R = partition_3level$phi_S_L2R,
-                                 # syn_S2C_L = partition_3level$phi_S2C_L,
-                                 # syn_C_L2R = partition_3level$phi_C_L2R,
-                                 # syn_S2C_R = partition_3level$phi_S2C_R
-                                 # add spatial div
-                                 # add beta
-                                 # name columns and how to find them: for each rep in nreps and x in conditions
-                               )
-                               
-                               
-                               # save to output table (might move down  here as some columns aren't calculated yet)
-                               # table should contain:
-                               # all the parameters and settings and identifiable for this run
-                               # rep specific = rep
-                               # condition specific = x 
-                               # responses that are condition specific and calculated using time_series_i: var metrics, synchrony metrics, spatial diversity
-                               # patch specific things: dispersal_rate = disp, disturbance_rate = disturbance_rates, kernel = kernal_vals (don't want to use these because too specific)
-                               # spatial diversity at final time point (average of last few points?), would use time_series_i
-                               # the four variability metrics: population, metapop, community, metacommunity? 
-                               # Do we need to save the synchrony metrics too? - they are outputs so yes
-                               # temporal beta diversity - BD de caceres and legendre paper
-                               
-                          
-                               # check that "output_summary" is 1 row, and a lot of columns
-                               
-                               return(output_summary) # this return means this is final information taken into dynamics_list
+                               return(dynamics_out)
                              }
     
     dynamics_total <- rbindlist(dynamics_list)
@@ -258,4 +218,34 @@ for(rep in 1:nreps){
     gc()
   }
 }
+
+?as.array
+as.array(dynamics_list[[1]][[1]]) # N of a species, need to go species richness (dim 1)
+as.array(dynamics_list[[1]][[2]]) # patch (dim 3)
+as.array(dynamics_list[[1]][[3]]) # species
+length(dynamics_list[[2]][[5]]) # time (dim 2 of var partitioning), just long because of burn in 
+# need to rearrange this into a data.table with time, patch, species i, species ii... 
+# create rowSums = richness (N)
+# into array where we have richness N (dim 1) by time (dim 2) for all patches (dim 3)
+new <- dynamics_list[[1]] # this simulates what the data will look like running in parrellel
+new <- data.table(new$N,new$patch,new$species,new$time) # no names
+#include this:
+new <- new %>% 
+  dplyr::select(V1,V2,V3,V5) 
+
+new <- new %>%  
+  rename(N = V1, patch = V2, species = V3, time = V4) %>%
+  mutate(N = replace(N, N > 0, 1)) %>%
+  pivot_wider(., names_from = "species", values_from = "N") %>% # this form might be all we want, have to check the var.partitioning code
+  dplyr::mutate(rich = rowSums(.[3:6])) %>% # change based on species number
+  dplyr::select(rich, patch, time) # selects richness (N), time (T), and patch (M)
+
+# struggling here####
+simplify2array(by(new,new$patch,as.matrix))
+
+array(c(unlist(new), dim = c(length(new$rich), length(new$time), length(new$patch))))
+array(c(new$rich, new$time, new$patch), dim = c(length(new$rich), length(new$time), length(new$patch)))
+metacomm_tsdata <- array() 
+# array N*T*M where N = number of species, T = timeseries, M= patch
+
 
