@@ -12,7 +12,7 @@ source(here("analysis/diversity_partitioning.R"))
 
 
 # define parameters
-nreps <- 2
+nreps <- 10
 x_dim <- 100
 y_dim <- 100
 patches <- 100
@@ -28,9 +28,9 @@ burn_in <- 800
 # run sim
 set.seed(82072)
 
-disp_rates <- 10^seq(-5, 0, length.out = 2)
-kernel_vals <- seq(0, 1, length.out = 2)
-disturbance_rates <- seq(0, 0.5, length.out = 2)
+disp_rates <- 10^seq(-5, 0, length.out = 50)
+kernel_vals <- seq(0, 1, length.out = 10)
+disturbance_rates <- seq(0, 0.5, length.out = 10)
 
 # remove seed bank
 germ <- 1
