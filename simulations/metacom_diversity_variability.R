@@ -8,10 +8,11 @@ library(doParallel)
 library(here)
 source(here("simulations/metacom_functions.R"))
 source(here("analysis/metacommunity_variability_partitioning.R"))
+source(here("analysis/diversity_partitioning.R"))
 
 
 # define parameters
-nreps <- 5
+nreps <- 2
 x_dim <- 100
 y_dim <- 100
 patches <- 100
@@ -212,7 +213,13 @@ for(rep in 1:nreps){
                                    dplyr::select(-species, -patch)
                                  metacomm_tsdata[,,m] <- as.matrix(temp)
                                }
+                               
+                               # partition variability
                                par <- var.partition(metacomm_tsdata)
+                               
+                               
+                               # partition diversity 
+                               div <- diversity.partition(metacomm_tsdata)
                                
                                # make an output table
                                output_summary <- data.table(
@@ -228,7 +235,10 @@ for(rep in 1:nreps){
                                  phi_S_L2R = par[5],
                                  phi_C_L2R = par[6],
                                  phi_S2C_L = par[7],
-                                 phi_S2C_R = par[8]
+                                 phi_S2C_R = par[8],
+                                 alpha_div = div[1],
+                                 beta_div = div[2], 
+                                 gamma_div = div[3]
                                  # add spatial div
                                  # add beta
                                )
