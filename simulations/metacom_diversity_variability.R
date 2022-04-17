@@ -28,7 +28,7 @@ burn_in <- 800
 # run sim
 set.seed(82072)
 
-disp_rates <- 10^seq(-5, 0, length.out = 50)
+disp_rates <- 10^seq(-5, 0, length.out = 20)
 kernel_vals <- seq(0, 1, length.out = 10)
 disturbance_rates <- seq(0, 0.5, length.out = 10)
 
