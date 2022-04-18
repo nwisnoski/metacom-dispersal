@@ -44,6 +44,7 @@ cl <- parallel::makeCluster(16)
 registerDoParallel()
 start_sim <- Sys.time()
 
+dynamics_total <- data.table()
 
 # for each replicate, rerun parameter sweep
 for(rep in 1:nreps){
@@ -260,15 +261,14 @@ for(rep in 1:nreps){
                                return(output_summary) # this return means this is final information taken into dynamics_list
                              }
     
-    dynamics_total <- rbindlist(dynamics_list)
+    dynamics_total_i <- rbindlist(dynamics_list)
+    dynamics_total <- bind_rows(dynamics_total, dynamics_total_i)
     end_sims <- Sys.time()
     tstamp <- str_replace_all(end_sims, " ", "_") %>% 
       str_replace_all(":", "")
-    
-    write_csv(x = dynamics_total, col_names = TRUE, 
-              file = here(paste0("sim_output/",x,"_", tstamp ,".csv")))
-    rm(dynamics_total)
     gc()
   }
 }
 
+write_csv(x = dynamics_total, col_names = TRUE, 
+          file = here(paste0("sim_output/variability_partitioning_", tstamp ,".csv")))
