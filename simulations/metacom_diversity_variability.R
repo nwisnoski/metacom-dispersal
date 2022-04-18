@@ -53,7 +53,7 @@ for(rep in 1:nreps){
   env_df <- env_generate(landscape = landscape, env1Scale = 500, 
                          timesteps = timesteps+burn_in, plot = FALSE)
   
-  
+  print(paste("Running rep", rep, "of", nreps))
   for(x in conditions){
     
     if(x == "equal"){
@@ -80,8 +80,9 @@ for(rep in 1:nreps){
                                min_inter = min_inter, max_inter = max_inter,
                                comp_scaler = comp_scaler, plot = FALSE)
     
+    print(paste("Simulating condition:", x))
     # up until this point, parameters are getting set up for this run 
-    dynamics_list <- foreach(p = 1:32, .inorder = FALSE,
+    dynamics_list <- foreach(p = 1:nrow(params), .inorder = FALSE,
                              .packages = c("tidyverse", "data.table", "stats")) %dopar% {
                                
                                # extract params
