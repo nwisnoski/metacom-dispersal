@@ -81,7 +81,7 @@ for(rep in 1:nreps){
                                comp_scaler = comp_scaler, plot = FALSE)
     
     # up until this point, parameters are getting set up for this run 
-    dynamics_list <- foreach(p = 1:nrow(params), .inorder = FALSE,
+    dynamics_list <- foreach(p = 1:32, .inorder = FALSE,
                              .packages = c("tidyverse", "data.table", "stats")) %dopar% {
                                
                                # extract params
@@ -196,7 +196,7 @@ for(rep in 1:nreps){
                                  
                                  # add time step i to the full dynamics "dynamics_out"
                                  dynamics_out <- rbind(dynamics_out, 
-                                                       dynamics_i)
+                                                       filter(dynamics_i, time > 0))
                                } # end loop calculating N responses for a timeseries
 
                                # here is where do temporal beta and variability paritioning
