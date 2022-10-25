@@ -240,7 +240,7 @@ generate_noise_ts <- function(a, length, ...){
 
 env_generate <- function(landscape, x_dim, y_dim, spat_auto = 0.5, temp_auto = 0, timesteps = 1000){
   grid <- list(x = seq(0, 5,, x_dim), y = seq(0, 5,, y_dim)) 
-  obj <-fields::Exp.image.cov(grid = grid, theta=theta, setup=TRUE)
+  obj <-fields::Exp.image.cov(grid = grid, theta=spat_auto, setup=TRUE)
   look <- fields::sim.rf(obj)
   # image.plot( grid$x, grid$y, look) 
   # title("simulated gaussian field")
