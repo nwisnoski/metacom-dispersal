@@ -1,7 +1,8 @@
 library(tidyverse)
 library(data.table)
 library(progress)
-library(RandomFields)
+library(fields)
+library(multitaper)
 library(vegan)
 library(foreach)
 library(doParallel)
@@ -13,13 +14,17 @@ source(here("analysis/diversity_partitioning.R"))
 
 # define parameters
 nreps <- 10
-x_dim <- 100
-y_dim <- 100
-patches <- 100
+x_dim <- 10
+y_dim <- 10
+patches <- x_dim * y_dim
 species <- 40
+full_grid <- TRUE
 #extirp_prob <- 0.000
 
-conditions <- c("stable", "priority")
+temp_auto = 0.5 # temporal autocorrelation, can range from -1 (blue noise) to 0 (white noise), to +1 (red noise)
+spat_auto = 0.5 # spatial autocorrelated, less clustered toward 0, more clustered toward 1
+
+conditions <- c("stable")
 
 timesteps <- 100
 initialization <- 200
@@ -50,9 +55,14 @@ dynamics_total <- data.table()
 for(rep in 1:nreps){
   
   # make new landscape, environmental data, and draw new competition coefficients
-  landscape <- init_landscape(patches = patches, x_dim = x_dim, y_dim = y_dim)
-  env_df <- env_generate(landscape = landscape, env1Scale = 500, 
-                         timesteps = timesteps+burn_in, plot = FALSE)
+  landscape <- if(full_grid == TRUE){
+    expand.grid(x = 1:x_dim, y = 1:y_dim)
+  } else init_landscape(patches = patches, x_dim = x_dim, y_dim = y_dim)
+  
+  env_df <- env_generate(landscape = landscape, x_dim = x_dim, y_dim = y_dim, 
+                         spat_auto = spat_auto, # spatial autocorrelated, less clustered toward 0, more clustered toward 1
+                         temp_auto = temp_auto, # temporal autocorrelation, can range from -1 (blue noise) to 0 (white noise), to +1 (red noise)
+                         timesteps = timesteps+burn_in)
   
   print(paste("Running rep", rep, "of", nreps))
   for(x in conditions){
@@ -119,9 +129,9 @@ for(rep in 1:nreps){
                                      N <- N + matrix(rpois(n = species*patches, lambda = 0.5), nrow = patches, ncol = species)
                                      D <- D + matrix(rpois(n = species*patches, lambda = 0.5), nrow = patches, ncol = species)
                                    }
-                                   env <- env_df$env1[env_df$time == 1]
+                                   env <- env_df$env[env_df$time == 1]
                                  } else {
-                                   env <- env_df$env1[env_df$time == (i - initialization)]
+                                   env <- env_df$env[env_df$time == (i - initialization)]
                                  }
                                  
                                  # compute r
@@ -194,7 +204,9 @@ for(rep in 1:nreps){
                                                           kernel_exp = kernel_exp,
                                                           extirp_prob = extirp_prob,
                                                           rep = rep,
-                                                          comp = x) 
+                                                          comp = x,
+                                                          temp_auto = temp_auto,
+                                                          spat_auto = spat_auto) 
                                  
                                  # add time step i to the full dynamics "dynamics_out"
                                  dynamics_out <- rbind(dynamics_out, 
@@ -202,6 +214,7 @@ for(rep in 1:nreps){
                                } # end loop calculating N responses for a timeseries
 
                                # here is where do temporal beta and variability paritioning
+                              
                                
                                new <- dynamics_out %>% 
                                  dplyr::select(N, patch, species, time) %>%  
@@ -223,6 +236,12 @@ for(rep in 1:nreps){
                                # partition diversity 
                                div <- diversity.partition(metacomm_tsdata)
                                
+                               # beta div calculations
+                               beta <- beta.div.calc(metacomm_tsdata)
+                               
+                               # local diversity-stability calculations
+                               local_dsr <- div.stab.comp(metacomm_tsdata)
+                               
                                # make an output table
                                output_summary <- data.table(
                                  rep = rep,
@@ -230,6 +249,8 @@ for(rep in 1:nreps){
                                  disp_rate = params[p,1],
                                  kernel_exp = params[p,2],
                                  disturb_rate = params[p,3],
+                                 temp_auto = temp_auto,
+                                 spat_auto = spat_auto,
                                  CV_S_L = par[1],
                                  CV_C_L = par[2],
                                  CV_S_R = par[3],
@@ -240,7 +261,11 @@ for(rep in 1:nreps){
                                  phi_S2C_R = par[8],
                                  alpha_div = div[1],
                                  beta_div = div[2], 
-                                 gamma_div = div[3]
+                                 gamma_div = div[3],
+                                 beta_spatial = beta$mean_beta_spatial,
+                                 beta_temporal = beta$mean_beta_temporal,
+                                 local_dsr_richness = local_dsr$local_mean_richness,
+                                 local_dsr_cv = local_dsr$local_mean_cv
                                  # add spatial div
                                  # add beta
                                )
