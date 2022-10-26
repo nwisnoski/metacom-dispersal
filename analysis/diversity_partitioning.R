@@ -33,8 +33,10 @@ beta.div.calc <- function(metacomm_tsdata){
   
   for(time in 1:ts_dims["time"]){
     snapshot <- metacomm_tsdata[,time,]
-    
-    beta_div <- adespatial::beta.div(t(snapshot), samp = FALSE)$beta[2]
+    sbs <- t(snapshot)
+    sbs <- vegan::decostand(sbs, "hellinger")
+    tot_ss <- sum((scale(sbs, center = TRUE, scale = FALSE))^2)
+    beta_div <- tot_ss / (nrow(sbs)-1)
     
     spat_beta_dynamics[time] <- beta_div
   }
@@ -43,8 +45,10 @@ beta.div.calc <- function(metacomm_tsdata){
   temp_beta_distribution <- numeric(length = ts_dims["sites"])
   for(site in 1:ts_dims["sites"]){
     site_ts <- metacomm_tsdata[,,site]
-    
-    beta_div <- adespatial::beta.div(t(site_ts), samp = FALSE)$beta[2]
+    tbs <- t(site_ts)
+    tbs <- vegan::decostand(tbs, "hellinger")
+    tot_ss <- sum((scale(tbs, center = TRUE, scale = FALSE))^2)
+    beta_div <- tot_ss / (nrow(tbs)-1)
     
     temp_beta_distribution[site] <- beta_div
   }
