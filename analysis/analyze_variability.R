@@ -4,7 +4,7 @@ library(patchwork)
 
 theme_set(theme_bw())
 
-variability <- read_csv(here("data/variability_data.csv"))
+variability <- read_csv(here("data/variability_partitioning_2022-10-26_163959.csv"))
 
 
 var_long_stable <- variability %>% 
@@ -252,17 +252,37 @@ variability %>%
 
 
 
+# variability %>% 
+#   filter(condition == "stable") %>% 
+#   filter(disturb_rate == 0) %>% 
+#   ggplot(aes(x = alpha_div, y = CV_C_L, color = as.factor(disp_rate))) + 
+#   geom_point(alpha = 0.3) + 
+#   geom_smooth(method = "lm", se=FALSE) +
+#   facet_wrap(~as.factor(round(kernel_exp,2)), scales = "free") + 
+#   scale_color_viridis_d() +
+#   theme_minimal() +
+#   labs(color = "Emigration rate", 
+#        x = "Mean alpha-diversity", 
+#        y = "Local community variability")
+
+
+
 variability %>% 
   filter(condition == "stable") %>% 
   filter(disturb_rate == 0) %>% 
-  ggplot(aes(x = alpha_div, y = CV_C_L, color = as.factor(disp_rate))) + 
-  geom_point(alpha = 0.3) + 
-  geom_smooth(method = "lm", se=FALSE) +
-  facet_wrap(~as.factor(round(kernel_exp,2)), scales = "free") + 
-  scale_color_viridis_d() +
-  theme_minimal() +
-  labs(color = "Emigration rate", 
-       x = "Mean alpha-diversity", 
-       y = "Local community variability")
+  ggplot(aes(x = local_dsr_richness, y = local_dsr_cv, color = as.factor(kernel_exp))) + 
+  geom_point(alpha = .3) + 
+  geom_smooth(method = "lm", se = FALSE) + 
+  facet_wrap(~as.factor(disp_rate), scales = "free") + 
+  scale_color_viridis_d() + 
+  theme_minimal()
 
-       
+
+variability %>% 
+  filter(condition == "stable") %>% 
+  filter(disturb_rate == 0) %>% 
+  ggplot(aes(x = local_dsr_richness, y = local_dsr_cv, color = as.factor(disp_rate))) + 
+  geom_point(alpha = .3) + 
+  geom_smooth(method = "lm", se = FALSE) + 
+  scale_color_viridis_d() + 
+  theme_minimal()

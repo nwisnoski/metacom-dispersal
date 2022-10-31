@@ -227,35 +227,42 @@ species_int_mat <- function(species, intra = 1, min_inter = 0, max_inter = 1.5, 
 
 
 # new environmental functions:
-generate_noise_ts <- function(a, length, ...){
+generate_noise_ts <- function(a, length, sd = 1){
+  sd = sd
   sig_vec <- NULL
   sig_vec[1] <- 0
   a <- a
   b <- (1-a^2)^0.5
   for(t in 2:length){
-    sig_vec[t] <- a*sig_vec[t-1] + b * rnorm(n = 1, mean = 0, sd = 1)
+    sig_vec[t] <- a*sig_vec[t-1] + b * rnorm(n = 1, mean = 0, sd = sd)
   }
   return(sig_vec)
 }
 
 env_generate <- function(landscape, x_dim, y_dim, spat_auto = 0.5, temp_auto = 0, timesteps = 1000){
-  grid <- list(x = seq(0, 5,, x_dim), y = seq(0, 5,, y_dim)) 
-  obj <-fields::Exp.image.cov(grid = grid, theta=spat_auto, setup=TRUE)
-  look <- fields::sim.rf(obj)
-  # image.plot( grid$x, grid$y, look) 
-  # title("simulated gaussian field")
+  grid <- list(x = seq(0, 5,, 1000), y = seq(0, 5,, 1000)) 
   
-  sig_mat <- matrix(NA, nrow = timesteps, ncol = nrow(landscape))
-  sig_mat[1,] <- look[cbind(landscape$x, landscape$y)]
-  for(patch in 1:nrow(landscape)){
-    mean_cond <- sig_mat[1,patch]
-    with_noise <- mean_cond + generate_noise_ts(a = temp_auto, length = nrow(sig_mat))
-    sig_mat[,patch] <- with_noise
-    #plot(with_noise, type = 'l')
-    #spec.mtm(with_noise)
+  repeat{
+    obj <-fields::Exp.image.cov(grid = grid, theta=spat_auto, setup=TRUE)
+    look <- fields::sim.rf(obj)
+    # image.plot( grid$x, grid$y, look) 
+    # title("simulated gaussian field")
     
+    sig_mat <- matrix(NA, nrow = timesteps, ncol = nrow(landscape))
+    sig_mat[1,] <- look[cbind(landscape$x * 100, landscape$y * 100)]
+    
+    
+    for(patch in 1:nrow(landscape)){
+      mean_cond <- sig_mat[1,patch]
+      with_noise <- mean_cond + generate_noise_ts(a = temp_auto, length = nrow(sig_mat), sd = 0.25)
+      sig_mat[,patch] <- with_noise
+      #plot(with_noise, type = 'l')
+      #spec.mtm(with_noise)
+      
+    }
+    sig_mat <- (sig_mat - min(sig_mat)) / (max(sig_mat) - min(sig_mat))
+    if(max(sig_mat[1,]) - min(sig_mat[1,]) > 0.6){break}
   }
-  sig_mat <- (sig_mat - min(sig_mat)) / (max(sig_mat) - min(sig_mat))
   sig_df <- tidyr::pivot_longer(cbind.data.frame(time = 1:timesteps, sig_mat), cols = (1:ncol(sig_mat)+1), names_to = "patch", values_to = "env")
                       
   return(sig_df)
