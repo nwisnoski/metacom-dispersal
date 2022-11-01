@@ -239,6 +239,16 @@ generate_noise_ts <- function(a, length, sd = 1){
   return(sig_vec)
 }
 
+
+x = 1:100
+t = 1
+y <- A*sin(k*x - w*t + phi)
+plot(y, type = "l")
+t = 8
+y <- A*sin(k*x - w*t + phi)
+points(y, type = "l")
+
+
 env_generate <- function(landscape, x_dim, y_dim, spat_auto = 0.5, temp_auto = 0, timesteps = 1000){
   grid <- list(x = seq(0, 100, length.out = 100), y = seq(0, 100, length.out = 100)) 
   
@@ -252,10 +262,16 @@ env_generate <- function(landscape, x_dim, y_dim, spat_auto = 0.5, temp_auto = 0
     sig_mat <- matrix(NA, nrow = timesteps, ncol = nrow(landscape))
     sig_mat[1,] <- look[cbind(landscape$x, landscape$y)]
     
+    # sine wave params
+    A <- 0.5
+    k <- 1/20 # wave number, wavelengths per unit distance
+    w <- 1/100 # angular frequency, relates to speed of propagation, v = w/k
+    phi <- 0 # phase, where in the cycle oscillation is at t=0  
     
     for(patch in 1:nrow(landscape)){
       mean_cond <- sig_mat[1,patch]
-      with_noise <- mean_cond + generate_noise_ts(a = temp_auto, length = nrow(sig_mat), sd = 0.1)
+      with_trend <- mean_cond + A*sin(k*landscape$x[patch] - w*(1:timesteps)) + A*sin(k*landscape$y[patch] - w*(1:timesteps)) + phi
+      with_noise <- with_trend + generate_noise_ts(a = temp_auto, length = nrow(sig_mat), sd = 0.1)
       sig_mat[,patch] <- with_noise
       #plot(with_noise, type = 'l')
       #spec.mtm(with_noise)
@@ -265,6 +281,17 @@ env_generate <- function(landscape, x_dim, y_dim, spat_auto = 0.5, temp_auto = 0
     if(max(sig_mat[1,]) - min(sig_mat[1,]) > 0.6){break}
   }
   sig_df <- tidyr::pivot_longer(cbind.data.frame(time = 1:timesteps, sig_mat), cols = (1:ncol(sig_mat)+1), names_to = "patch", values_to = "env")
+  sig_df %>% 
+    filter(as.numeric(patch) < 10) %>% 
+    ggplot(aes(x = time, y= env, color = patch)) + geom_line(alpha = 0.8, show.legend = F) + theme_bw()
   
   return(sig_df)
 }
+
+# anim <- sig_df %>% left_join(rownames_to_column(landscape, var = "patch")) %>% 
+#   ggplot() +
+#   geom_tile(mapping = aes(x = x, y = y, fill = env)) +
+#   transition_states(states = time) +
+#   theme_minimal() +
+#   scale_fill_viridis()
+# animate(anim, duration = 10)  
