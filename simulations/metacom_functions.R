@@ -240,21 +240,22 @@ generate_noise_ts <- function(a, length, sd = 1){
 }
 
 env_generate <- function(landscape, x_dim, y_dim, spat_auto = 0.5, temp_auto = 0, timesteps = 1000){
-  grid <- list(x = seq(0, 5,, 1000), y = seq(0, 5,, 1000)) 
+  grid <- list(x = seq(0, 100, length.out = 100), y = seq(0, 100, length.out = 100)) 
   
   repeat{
     obj <-fields::Exp.image.cov(grid = grid, theta=spat_auto, setup=TRUE)
     look <- fields::sim.rf(obj)
-    # image.plot( grid$x, grid$y, look) 
+    image.plot( grid$x, grid$y, look) 
+    points(landscape)
     # title("simulated gaussian field")
     
     sig_mat <- matrix(NA, nrow = timesteps, ncol = nrow(landscape))
-    sig_mat[1,] <- look[cbind(landscape$x * 100, landscape$y * 100)]
+    sig_mat[1,] <- look[cbind(landscape$x, landscape$y)]
     
     
     for(patch in 1:nrow(landscape)){
       mean_cond <- sig_mat[1,patch]
-      with_noise <- mean_cond + generate_noise_ts(a = temp_auto, length = nrow(sig_mat), sd = 0.25)
+      with_noise <- mean_cond + generate_noise_ts(a = temp_auto, length = nrow(sig_mat), sd = 0.1)
       sig_mat[,patch] <- with_noise
       #plot(with_noise, type = 'l')
       #spec.mtm(with_noise)
@@ -264,6 +265,6 @@ env_generate <- function(landscape, x_dim, y_dim, spat_auto = 0.5, temp_auto = 0
     if(max(sig_mat[1,]) - min(sig_mat[1,]) > 0.6){break}
   }
   sig_df <- tidyr::pivot_longer(cbind.data.frame(time = 1:timesteps, sig_mat), cols = (1:ncol(sig_mat)+1), names_to = "patch", values_to = "env")
-                      
+  
   return(sig_df)
 }

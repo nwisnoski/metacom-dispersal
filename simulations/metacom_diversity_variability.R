@@ -14,15 +14,15 @@ source(here("analysis/diversity_partitioning.R"))
 
 # define parameters
 nreps <- 10
-x_dim <- 10
-y_dim <- 10
-patches <- x_dim * y_dim
+x_dim <- 100
+y_dim <- 100
+patches <- 100
 species <- 40
-full_grid <- TRUE
+full_grid <- FALSE
 #extirp_prob <- 0.000
 
 temp_auto = c(-0.8, 0, 0.8) # temporal autocorrelation, can range from -1 (blue noise) to 0 (white noise), to +1 (red noise)
-spat_auto = c(0.0001, 0.1, 0.5) # spatial autocorrelated, less clustered toward 0, more clustered toward 1
+spat_auto = c(0.0001, 5, 10) # spatial autocorrelated, less clustered toward 0, more clustered toward 1
 
 conditions <- c("stable")
 
