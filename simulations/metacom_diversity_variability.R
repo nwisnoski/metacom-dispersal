@@ -21,8 +21,16 @@ species <- 40
 full_grid <- FALSE
 #extirp_prob <- 0.000
 
-temp_auto = c(-0.8, 0, 0.8) # temporal autocorrelation, can range from -1 (blue noise) to 0 (white noise), to +1 (red noise)
-spat_auto = c(0.0001, 5, 10) # spatial autocorrelated, less clustered toward 0, more clustered toward 1
+# environmental var params
+temp_auto_vec = c(-0.8, 0, 0.8) # temporal autocorrelation, can range from -1 (blue noise) to 0 (white noise), to +1 (red noise)
+spat_auto_vec = c(0.0001, 5, 10) # spatial autocorrelation, less clustered toward 0, more clustered toward 1
+
+# traveling sine wave params
+A <- 0.5
+k <- 1/20 # wave number, wavelengths per unit distance
+w <- 1/100 # angular frequency, relates to speed of propagation, v = w/k
+phi <- 0 # phase, where in the cycle oscillation is at t=0  
+
 
 conditions <- c("stable")
 
@@ -54,9 +62,9 @@ dynamics_total <- data.table()
 # for each replicate, rerun parameter sweep
 for(rep in 1:nreps){
   
-  for(temp_auto in temp_auto){
+  for(temp_auto in temp_auto_vec){
     
-    for(spat_auto in spat_auto){
+    for(spat_auto in spat_auto_vec){
       
       
       
@@ -68,7 +76,7 @@ for(rep in 1:nreps){
       env_df <- env_generate(landscape = landscape, x_dim = x_dim, y_dim = y_dim, 
                              spat_auto = spat_auto, # spatial autocorrelated, less clustered toward 0, more clustered toward 1
                              temp_auto = temp_auto, # temporal autocorrelation, can range from -1 (blue noise) to 0 (white noise), to +1 (red noise)
-                             timesteps = timesteps+burn_in)
+                             timesteps = timesteps+burn_in, A=A, k=k, w=w, phi=phi)
       
       print(paste("Running rep", rep, "of", nreps))
       for(x in conditions){

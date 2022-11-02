@@ -240,16 +240,8 @@ generate_noise_ts <- function(a, length, sd = 1){
 }
 
 
-x = 1:100
-t = 1
-y <- A*sin(k*x - w*t + phi)
-plot(y, type = "l")
-t = 8
-y <- A*sin(k*x - w*t + phi)
-points(y, type = "l")
 
-
-env_generate <- function(landscape, x_dim, y_dim, spat_auto = 0.5, temp_auto = 0, timesteps = 1000){
+env_generate <- function(landscape, x_dim, y_dim, spat_auto = 0.5, temp_auto = 0, timesteps = 1000, A, k, w, phi){
   grid <- list(x = seq(0, 100, length.out = 100), y = seq(0, 100, length.out = 100)) 
   
   repeat{
@@ -263,10 +255,10 @@ env_generate <- function(landscape, x_dim, y_dim, spat_auto = 0.5, temp_auto = 0
     sig_mat[1,] <- look[cbind(landscape$x, landscape$y)]
     
     # sine wave params
-    A <- 0.5
-    k <- 1/20 # wave number, wavelengths per unit distance
-    w <- 1/100 # angular frequency, relates to speed of propagation, v = w/k
-    phi <- 0 # phase, where in the cycle oscillation is at t=0  
+    A <- A
+    k <- k # wave number, wavelengths per unit distance
+    w <- w # angular frequency, relates to speed of propagation, v = w/k
+    phi <- phi # phase, where in the cycle oscillation is at t=0  
     
     for(patch in 1:nrow(landscape)){
       mean_cond <- sig_mat[1,patch]
