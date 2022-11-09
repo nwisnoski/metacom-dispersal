@@ -107,8 +107,13 @@ for(rep in 1:nreps){
         
         print(paste("Simulating condition:", x))
         # up until this point, parameters are getting set up for this run 
-        dynamics_list <- foreach(p = 1:nrow(params), .inorder = FALSE,
+        dynamics_list <- foreach(p = 1:nrow(params), 
+                                 .inorder = FALSE,
+                                 .errorhandling = 'pass',
                                  .packages = c("tidyverse", "data.table", "stats")) %dopar% {
+                                   
+                                   try(expr = {
+                                   
                                    
                                    # extract params
                                    disp <- params[p,1]
@@ -298,9 +303,13 @@ for(rep in 1:nreps){
                                    # check that "output_summary" is 1 row, and a lot of columns
                                    
                                    return(output_summary) # this return means this is final information taken into dynamics_list
+                                   }, silent = FALSE, outFile = "errors.log")
                                  }
         
-        dynamics_total_i <- rbindlist(dynamics_list)
+        
+        fails <- (as.logical(lapply(dynamics_list, is_try_error)) + as.logical(lapply(dynamics_list, is_simple_error)))
+        
+        dynamics_total_i <- rbindlist(dynamics_list[!fails]) # only binds the runs without errors
         dynamics_total <- bind_rows(dynamics_total, dynamics_total_i)
         end_sims <- Sys.time()
         tstamp <- str_replace_all(end_sims, " ", "_") %>% 

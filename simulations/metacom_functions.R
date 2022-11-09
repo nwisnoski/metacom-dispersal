@@ -287,3 +287,7 @@ env_generate <- function(landscape, x_dim, y_dim, spat_auto = 0.5, temp_auto = 0
 #   theme_minimal() +
 #   scale_fill_viridis()
 # animate(anim, duration = 10)  
+
+# some error handling
+is_simple_error <- function(x) inherits(x, "simpleError")
+is_try_error <- function(x) inherits(x, "try-error")
