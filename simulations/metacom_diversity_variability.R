@@ -27,8 +27,8 @@ spat_auto_vec = c(0.0001, 5, 10) # spatial autocorrelation, less clustered towar
 
 # traveling sine wave params
 A <- 0.5
-k <- 1/20 # wave number, wavelengths per unit distance
-w <- 1/100 # angular frequency, relates to speed of propagation, v = w/k
+k <- 1/10 # wave number, wavelengths per unit distance, 1/100 is synchronous fluctuations, 1/20 gets to asynchronous
+w <- 1/50 # angular frequency, relates to speed of propagation, v = w/k; 1/500 = directional change, 1/100 is oscillation, bigger number is more rapid change
 phi <- 0 # phase, where in the cycle oscillation is at t=0  
 
 
@@ -43,7 +43,7 @@ set.seed(82072)
 
 disp_rates <- 10^seq(-5, 0, length.out = 20)
 kernel_vals <- seq(0, 1, length.out = 10)
-disturbance_rates <- seq(0.01, 0.5, length.out = 3)
+disturbance_rates <- seq(0.00, 0.5, length.out = 3)
 
 # remove seed bank
 germ <- 1
@@ -77,6 +77,8 @@ for(rep in 1:nreps){
                              spat_auto = spat_auto, # spatial autocorrelated, less clustered toward 0, more clustered toward 1
                              temp_auto = temp_auto, # temporal autocorrelation, can range from -1 (blue noise) to 0 (white noise), to +1 (red noise)
                              timesteps = timesteps+burn_in, A=A, k=k, w=w, phi=phi)
+      # ggplot(env_df, aes(x = time, y = env, color = patch)) + geom_line(alpha = 0.2) + 
+      #   geom_line(data = filter(env_df, patch %in% sample(1:100, 5)))
       
       print(paste("Running rep", rep, "of", nreps))
       for(x in conditions){
