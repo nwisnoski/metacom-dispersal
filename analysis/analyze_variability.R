@@ -4,13 +4,10 @@ library(patchwork)
 
 theme_set(theme_bw())
 
-variability <- read_csv(here("data/variability_partitioning_2022-11-14_112210.csv"))
+variability <- read_csv(here("data/variability_partitioning_2022-11-16_034010.csv"))
+variability_2 <- read_csv(here("data/variability_partitioning_2022-11-14_112210.csv"))
 
-kernel_exps <- unique(variability$kernel_exp)
-disp_rates <- unique(variability$disp_rate)
-disturb_rates <- unique(variability$disturb_rate)
-
-variability <- variability %>% 
+variability <- variability %>% bind_rows(variability_2) %>% 
   mutate(local_dsr_cv = replace_na(local_dsr_cv, 0),
          CV_S_L = replace_na(CV_S_L, 0),
          CV_C_L = replace_na(CV_C_L, 0), 
@@ -22,6 +19,10 @@ variability <- variability %>%
          phi_S2C_R = replace_na(phi_S2C_R, 0),
          beta_div = replace_na(beta_div, 0))
 
+
+kernel_exps <- sort(unique(variability$kernel_exp))
+disp_rates <- sort(unique(variability$disp_rate))
+disturb_rates <- sort(unique(variability$disturb_rate))
 
 # Diversity patterns
 div_long_stable <- variability %>% 
@@ -37,20 +38,22 @@ div_long_stable <- variability %>%
          #synchrony = factor(synchrony, levels = c("phi_S_L2R", "phi_S2C_L", "phi_S2C_R", "phi_C_L2R")),
          div_type = factor(div_type, levels = c("alpha_div", "beta_div", "gamma_div", "beta_spatial", "beta_temporal")))
 
-div_long_stable %>% 
-  filter(disturb_rate < 0.1) %>% 
+diversity_plot <- div_long_stable %>% 
+  filter(disturb_rate < 0.05) %>% 
   ggplot(aes(x = disp_rate, y = diversity, color = as.factor(round(kernel_exp,2)))) + 
   geom_point(alpha = 0.2) + 
   #geom_smooth(method = "loess", span = .5, se = FALSE) + 
   geom_smooth(method = "gam", formula = y ~ s(x, k = 20, bs = "cs"), se = F) +
   scale_x_log10() +
   scale_color_viridis_d() +
-  facet_grid(div_type ~ round(disturb_rate,2), scales = "free_y")
+  facet_grid(div_type ~ round(disturb_rate,2), scales = "free_y") +
+  labs(x = "Emigration rate", y = "Diversity", color = "Kernel exponent")
+ggsave(filename = "figures/fig_diversity.pdf", width = 10, height = 8)
 
 
 # variability
 var_long_stable <- variability %>% 
-  filter(disturb_rate < 0.1) %>% 
+  filter(disturb_rate < 0.05) %>% 
   filter(condition == "stable") %>% 
   pivot_longer(cols = c(CV_S_L, CV_C_L, CV_S_R, CV_C_R), 
                names_to = "variability", values_to = "CV") %>% 
@@ -67,7 +70,19 @@ var_long_stable <- variability %>%
 
 
 panel_stable_var_disturbed <- var_long_stable %>% 
-  filter(disturb_rate > 0) %>% 
+  filter(disturb_rate > 0, gamma_div > 0) %>% 
+  ggplot(aes(x = disp_rate, y = CV, color = as.factor(round(kernel_exp, 2)))) + 
+  geom_point(alpha = 0.2) + 
+  #geom_smooth(method = "loess", se = FALSE) +
+  geom_smooth(method = "gam", formula = y ~ s(x, k = 5, bs = "cs"), se = FALSE) + 
+  facet_grid(variability~round(disturb_rate,2), scales = "free_y") +
+  scale_x_log10() +
+  scale_color_viridis_d(option = "A") +
+  labs(color = "Dispersal kernel \nexponent",
+       x = "Emigration rate")
+
+panel_stable_var_undisturbed <- var_long_stable %>% 
+  filter(disturb_rate == 0, gamma_div > 0) %>% 
   ggplot(aes(x = disp_rate, y = CV, color = as.factor(round(kernel_exp, 2)))) + 
   geom_point(alpha = 0.2) + 
   #geom_smooth(method = "loess", se = FALSE) +
@@ -78,17 +93,6 @@ panel_stable_var_disturbed <- var_long_stable %>%
   labs(color = "Dispersal kernel \nexponent",
        x = "Emigration rate")
 
-panel_stable_var_undisturbed <- var_long_stable %>% 
-  filter(disturb_rate == 0) %>% 
-  ggplot(aes(x = disp_rate, y = CV, color = as.factor(round(kernel_exp, 2)))) + 
-  geom_point(alpha = 0.2) + 
-  #geom_smooth(method = "loess", se = FALSE) +
-  geom_smooth(method = "gam", formula = y ~ s(x, k = 20, bs = "cs"), se = FALSE) + 
-  facet_grid(variability~round(disturb_rate,2), scales = "free_y") +
-  scale_x_log10() +
-  scale_color_viridis_d(option = "A") +
-  labs(color = "Dispersal kernel \nexponent",
-       x = "Emigration rate")
 
 fig_stable_disturb_v_undisturb_variability <- panel_stable_var_undisturbed + panel_stable_var_disturbed +
   plot_layout(ncol = 2, guides = "collect") + 
@@ -104,8 +108,9 @@ ggsave(filename = "figures/variability_stable_disturb_vs_undisturb.pdf",
 
 # now look at the phi values, the scaling coefficients
 
+
 panel_stable_phi_disturbed <- var_long_stable %>% 
-  filter(disturb_rate > 0) %>% 
+  filter(disturb_rate > 0, gamma_div > 0) %>% 
   ggplot(aes(x = disp_rate, y = phi, color = as.factor(round(kernel_exp, 2)))) + 
   geom_point(alpha = 0.2) + 
   geom_smooth(method = "gam", formula = y ~ s(x, k = 20, bs = "cs"), se = FALSE) + 
@@ -115,7 +120,7 @@ panel_stable_phi_disturbed <- var_long_stable %>%
   labs(color = "Dispersal kernel \nexponent",
        x = "Emigration rate", y = "Synchrony (phi)") 
 panel_stable_phi_undisturbed <- var_long_stable %>% 
-  filter(disturb_rate == 0) %>% 
+  filter(disturb_rate == 0, gamma_div > 0) %>% 
   ggplot(aes(x = disp_rate, y = phi, color = as.factor(round(kernel_exp, 2)))) + 
   geom_point(alpha = 0.2) + 
   geom_smooth(method = "gam", formula = y ~ s(x, k = 20, bs = "cs"), se = FALSE) + 
