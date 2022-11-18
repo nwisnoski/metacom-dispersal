@@ -1,0 +1,23 @@
+kernel <- function(x, k){
+  return(10^((-k) * x))
+}
+
+pdf("dispersal_kernel_family.pdf", width = 6, height = 4)
+curve(expr = kernel(x, k=1), from = 0, to = 10, n = 100, type = "l",xlab = "Distance", ylab = "Probability of Dispersal")
+for(k in 0:10/10){
+  curve(expr = kernel(x, k=k), from = 0, to = 10, n = 100, type = "l", add = TRUE)
+  
+}
+dev.off()
+
+pdf("dispersal_kernel_0.9.pdf", width = 6, height = 4)
+curve(expr = kernel(x, k=0.9), from = 0, to = 10, n = 100, type = "l",xlab = "Distance", ylab = "Probability of Dispersal")
+dev.off()
+
+pdf("dispersal_kernel_0.01.pdf", width = 6, height = 4)
+curve(expr = kernel(x, k=0.01), 
+      from = 0, to = 10, n = 100, 
+      type = "l", xlab = "Distance", 
+      ylab = "Probability of Dispersal", ylim = c(0,1))
+dev.off()
+
