@@ -26,7 +26,7 @@ disturb_rates <- sort(unique(variability$disturb_rate))
 
 # Diversity patterns
 div_long_stable <- variability %>% 
-  #filter(disturb_rate < 0.1) %>% 
+  filter(disturb_rate < 0.05) %>% 
   filter(condition == "stable") %>% 
   # pivot_longer(cols = c(CV_S_L, CV_C_L, CV_S_R, CV_C_R), 
   #              names_to = "variability", values_to = "CV") %>% 
@@ -38,8 +38,8 @@ div_long_stable <- variability %>%
          #synchrony = factor(synchrony, levels = c("phi_S_L2R", "phi_S2C_L", "phi_S2C_R", "phi_C_L2R")),
          div_type = factor(div_type, levels = c("alpha_div", "beta_div", "gamma_div", "beta_spatial", "beta_temporal")))
 
-diversity_plot <- div_long_stable %>% 
-  filter(disturb_rate < 0.05) %>% 
+diversity_plot_undisturbed <- div_long_stable %>% 
+  filter(disturb_rate == 0) %>% 
   ggplot(aes(x = disp_rate, y = diversity, color = as.factor(round(kernel_exp,2)))) + 
   geom_point(alpha = 0.2) + 
   #geom_smooth(method = "loess", span = .5, se = FALSE) + 
@@ -48,7 +48,23 @@ diversity_plot <- div_long_stable %>%
   scale_color_viridis_d() +
   facet_grid(div_type ~ round(disturb_rate,2), scales = "free_y") +
   labs(x = "Emigration rate", y = "Diversity", color = "Kernel exponent")
-ggsave(filename = "figures/fig_diversity.pdf", width = 10, height = 8)
+
+diversity_plot_disturbed <- div_long_stable %>% 
+  filter(disturb_rate > 0) %>% 
+  ggplot(aes(x = disp_rate, y = diversity, color = as.factor(round(kernel_exp,2)))) + 
+  geom_point(alpha = 0.2) + 
+  #geom_smooth(method = "loess", span = .5, se = FALSE) + 
+  geom_smooth(method = "gam", formula = y ~ s(x, k = 20, bs = "cs"), se = F) +
+  scale_x_log10() +
+  scale_color_viridis_d() +
+  facet_grid(div_type ~ round(disturb_rate,2), scales = "free_y") +
+  labs(x = "Emigration rate", y = "Diversity", color = "Kernel exponent")
+
+figure_diversity <- diversity_plot_undisturbed + diversity_plot_disturbed +
+  plot_layout(ncol = 2, guides = "collect") + 
+  plot_annotation(tag_levels = "A", tag_suffix = ")")
+
+ggsave(plot = figure_diversity, filename = "figures/fig_diversity.pdf", width = 10, height = 8)
 
 
 # variability
