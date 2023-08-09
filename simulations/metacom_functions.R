@@ -291,3 +291,20 @@ env_generate <- function(landscape, x_dim, y_dim, spat_auto = 0.5, temp_auto = 0
 # some error handling
 is_simple_error <- function(x) inherits(x, "simpleError")
 is_try_error <- function(x) inherits(x, "try-error")
+
+
+# geometric mean 
+gm_mean = function(x, na.rm=TRUE, zero.propagate = FALSE){
+  if(any(x < 0, na.rm = TRUE)){
+    return(NaN)
+  }
+  if(zero.propagate){
+    if(any(x == 0, na.rm = TRUE)){
+      return(0)
+    }
+    exp(mean(log(x), na.rm = na.rm))
+  } else {
+    exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
+  }
+}
+

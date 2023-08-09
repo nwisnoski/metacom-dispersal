@@ -13,7 +13,7 @@ source(here("analysis/diversity_partitioning.R"))
 
 
 # define parameters
-nreps <- 10
+nreps <- 2
 x_dim <- 100
 y_dim <- 100
 patches <- 100
@@ -32,18 +32,18 @@ w <- 1/50 # angular frequency, relates to speed of propagation, v = w/k; 1/500 =
 phi <- 0 # phase, where in the cycle oscillation is at t=0  
 
 
-conditions <- c("stable")
+conditions <- c("stable") # can also be "equal" or "priority"
 
 timesteps <- 100
 initialization <- 200
 burn_in <- 800
 
 # run sim
-set.seed(82072)
+# set.seed(82072)
 
-disp_rates <- 10^seq(-5, 0, length.out = 20)
-kernel_vals <- seq(0, 1, length.out = 10)
-disturbance_rates <- seq(0.00, 0.5, length.out = 3)
+disp_rates <- 10^seq(-5, 0, length.out = 5)
+kernel_vals <- seq(0, 1, length.out = 2)
+disturbance_rates <- seq(0.00, 0.05, length.out = 3)
 
 # remove seed bank
 germ <- 1
@@ -77,8 +77,8 @@ for(rep in 1:nreps){
                              spat_auto = spat_auto, # spatial autocorrelated, less clustered toward 0, more clustered toward 1
                              temp_auto = temp_auto, # temporal autocorrelation, can range from -1 (blue noise) to 0 (white noise), to +1 (red noise)
                              timesteps = timesteps+burn_in, A=A, k=k, w=w, phi=phi)
-      # ggplot(env_df, aes(x = time, y = env, color = patch)) + geom_line(alpha = 0.2) + 
-      #   geom_line(data = filter(env_df, patch %in% sample(1:100, 5)))
+      # ggplot(env_df, aes(x = time, y = env, color = patch)) + geom_line(alpha = 0.2) +
+      #   geom_line()
       
       print(paste("Running rep", rep, "of", nreps))
       for(x in conditions){
@@ -158,6 +158,8 @@ for(rep in 1:nreps){
                                      # compute r
                                      r <- compute_r_xt(species_traits, env = env, species = species)
                                      
+                                     fitness_env <- r
+                                     
                                      # compute growth
                                      #N_hat <- N*r / (1 + N%*%int_mat)
                                      
@@ -217,6 +219,7 @@ for(rep in 1:nreps){
                                      
                                      # At this point, N contains a snapshot of the community at time i
                                      dynamics_i <- data.table(N = c(N),
+                                                              W_env = c(fitness_env), # fitness with env filtering
                                                               patch = 1:patches,
                                                               species = rep(1:species, each = patches),
                                                               env = env,
@@ -234,7 +237,7 @@ for(rep in 1:nreps){
                                                            filter(dynamics_i, time > 0))
                                    } # end loop calculating N responses for a timeseries
                                    
-                                   # here is where do temporal beta and variability paritioning
+                                   # here is where do temporal beta and variability partitioning
                                    
                                    
                                    new <- dynamics_out %>% 
@@ -263,6 +266,7 @@ for(rep in 1:nreps){
                                    # local diversity-stability calculations
                                    local_dsr <- div.stab.comp(metacomm_tsdata)
                                    
+                                   
                                    # make an output table
                                    output_summary <- data.table(
                                      rep = rep,
@@ -287,9 +291,8 @@ for(rep in 1:nreps){
                                      beta_temporal = beta$mean_beta_temporal,
                                      local_dsr_richness = local_dsr$local_mean_richness,
                                      local_dsr_cv = local_dsr$local_mean_cv
-                                     # add spatial div
-                                     # add beta
                                    )
+                                   
                                    
                                    # output should contain:
                                    # all the parameters and settings and identifiable for this run
@@ -321,6 +324,6 @@ for(rep in 1:nreps){
     }
   }
 }
-
+dynamics_total <- dynamics_total %>% unnest(cols = pop_dynamics)
 write_csv(x = dynamics_total, col_names = TRUE, 
           file = here(paste0("sim_output/variability_partitioning_", tstamp ,".csv")))
