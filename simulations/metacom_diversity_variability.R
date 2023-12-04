@@ -22,14 +22,17 @@ full_grid <- FALSE
 #extirp_prob <- 0.000
 
 # environmental var params
-temp_auto_vec = c(-0.8, 0, 0.8) # temporal autocorrelation, can range from -1 (blue noise) to 0 (white noise), to +1 (red noise)
-spat_auto_vec = c(0.0001, 5, 10) # spatial autocorrelation, less clustered toward 0, more clustered toward 1
+temp_noise_color_vec = c(-0.8, 0, 0.8) # temporal autocorrelation, can range from -1 (blue noise) to 0 (white noise), to +1 (red noise)
+temp_noise_sd = 0.1
 
-# traveling sine wave params
-A <- 0.5
-k <- 1/10 # wave number, wavelengths per unit distance, 1/100 is synchronous fluctuations, 1/20 gets to asynchronous
-w <- 1/50 # angular frequency, relates to speed of propagation, v = w/k; 1/500 = directional change, 1/100 is oscillation, bigger number is more rapid change
+# temporal trends (set cycles very high to have no trend)
+cycles <- 100 # how long are interannual cycles in years/timesteps?
+w <- (2*pi) / cycles # angular frequency, oscillations per time interval in radians per second
+A <- 0.5 # amplitude, peak deviations
 phi <- 0 # phase, where in the cycle oscillation is at t=0  
+
+
+spat_hetero_vec = c(0.0001, 5, 10) # spatial heterogeneity, higher numbers, steeper slopes
 
 
 conditions <- c("stable") # can also be "equal" or "priority"
@@ -53,7 +56,7 @@ surv <- 0
 
 params <- expand.grid(disp_rates, kernel_vals, disturbance_rates)
 
-cl <- parallel::makeCluster(16)
+cl <- parallel::makeCluster(10)
 registerDoParallel()
 start_sim <- Sys.time()
 
@@ -62,9 +65,9 @@ dynamics_total <- data.table()
 # for each replicate, rerun parameter sweep
 for(rep in 1:nreps){
   
-  for(temp_auto in temp_auto_vec){
+  for(temp_noise_color in temp_noise_color_vec){
     
-    for(spat_auto in spat_auto_vec){
+    for(spat_heterogeneity in spat_hetero_vec){
       
       
       
@@ -73,12 +76,12 @@ for(rep in 1:nreps){
         expand.grid(x = 1:x_dim, y = 1:y_dim)
       } else init_landscape(patches = patches, x_dim = x_dim, y_dim = y_dim)
       
-      env_df <- env_generate(landscape = landscape, x_dim = x_dim, y_dim = y_dim, 
-                             spat_auto = spat_auto, # spatial autocorrelated, less clustered toward 0, more clustered toward 1
-                             temp_auto = temp_auto, # temporal autocorrelation, can range from -1 (blue noise) to 0 (white noise), to +1 (red noise)
-                             timesteps = timesteps+burn_in, A=A, k=k, w=w, phi=phi)
-      # ggplot(env_df, aes(x = time, y = env, color = patch)) + geom_line(alpha = 0.2) +
-      #   geom_line()
+      env_df <- env_generate(landscape = landscape, 
+                             spat_heterogeneity = spat_heterogeneity, # spatial autocorrelated, less clustered toward 0, more clustered toward 1
+                             temp_noise_color = temp_noise_color, # temporal noise autocorrelation, can range from -1 (blue noise) to 0 (white noise), to +1 (red noise)
+                             temp_noise_sd = temp_noise_sd, # temp noise standard deviation, more or less variable
+                             timesteps = timesteps+burn_in, A=A, w=w, phi=phi)
+      ggplot(env_df, aes(x = time, y = env, color = patch)) + geom_line(alpha = 0.2, show.legend = FALSE) + theme_minimal()
       
       print(paste("Running rep", rep, "of", nreps))
       for(x in conditions){

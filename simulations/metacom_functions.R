@@ -240,45 +240,88 @@ generate_noise_ts <- function(a, length, sd = 1){
 }
 
 
-
-env_generate <- function(landscape, x_dim, y_dim, spat_auto = 0.5, temp_auto = 0, timesteps = 1000, A, k, w, phi){
-  grid <- list(x = seq(0, 100, length.out = 100), y = seq(0, 100, length.out = 100)) 
+# simpler env simulator
+env_generate <- function(landscape, 
+                         spat_heterogeneity = 0.5, 
+                         temp_noise_color = 0,
+                         temp_noise_sd = 0,
+                         timesteps = 1000, A, w, phi){
   
-  repeat{
-    obj <-fields::Exp.image.cov(grid = grid, theta=spat_auto, setup=TRUE)
-    look <- fields::sim.rf(obj)
-    image.plot( grid$x, grid$y, look) 
-    points(landscape)
-    # title("simulated gaussian field")
-    
-    sig_mat <- matrix(NA, nrow = timesteps, ncol = nrow(landscape))
-    sig_mat[1,] <- look[cbind(landscape$x, landscape$y)]
-    
-    # sine wave params
-    A <- A
-    k <- k # wave number, wavelengths per unit distance
-    w <- w # angular frequency, relates to speed of propagation, v = w/k
-    phi <- phi # phase, where in the cycle oscillation is at t=0  
-    
-    for(patch in 1:nrow(landscape)){
-      mean_cond <- sig_mat[1,patch]
-      with_trend <- mean_cond + A*sin(k*landscape$x[patch] - w*(1:timesteps)) + A*sin(k*landscape$y[patch] - w*(1:timesteps)) + phi
-      with_noise <- with_trend + generate_noise_ts(a = temp_auto, length = nrow(sig_mat), sd = 0.1)
-      sig_mat[,patch] <- with_noise
-      #plot(with_noise, type = 'l')
-      #spec.mtm(with_noise)
-      
-    }
-    sig_mat <- (sig_mat - min(sig_mat)) / (max(sig_mat) - min(sig_mat))
-    if(max(sig_mat[1,]) - min(sig_mat[1,]) > 0.6){break}
+  env_mat <- matrix(0, nrow = timesteps, ncol = nrow(landscape))
+  
+  # spatial heterogeneity is from linear increase in x and y directions
+  gen_spatial_var <- function(x, y) return(spat_heterogeneity*x + spat_heterogeneity*y)
+  env_mat_init <- gen_spatial_var(landscape$x, landscape$y)
+  for(patch in 1:ncol(env_mat)){
+    env_mat[,patch] = env_mat[,patch] + env_mat_init[patch]
   }
-  sig_df <- tidyr::pivot_longer(cbind.data.frame(time = 1:timesteps, sig_mat), cols = (1:ncol(sig_mat)+1), names_to = "patch", values_to = "env")
-  sig_df %>% 
-    filter(as.numeric(patch) < 10) %>% 
-    ggplot(aes(x = time, y= env, color = patch)) + geom_line(alpha = 0.8, show.legend = F) + theme_bw()
   
-  return(sig_df)
+  # sine wave params
+  A <- A # amplitude, peak deviation
+  w <- w # angular frequency, oscillations per time interval in radians per second
+  phi <- phi # phase, in radians where the cycle is at t = 0
+  
+  # add one timeseries on top of starting conditions
+  sim_ts_trend <- A*sin(w*(1:timesteps) + phi)
+  sim_ts_trend_noise <- sim_ts_trend + generate_noise_ts(a = temp_noise_color, length = nrow(env_mat), sd = temp_noise_sd)
+  plot(sim_ts_trend_noise, type = 'l')
+  
+  env_mat <- env_mat + sim_ts_trend_noise
+  
+  # spec.mtm(generate_noise_ts(a = 0, length = 10000, sd = temp_noise_sd), dtUnits = "year")
+  # spectrum(env_ts)
+  # 
+  
+  env_mat <- (env_mat - min(env_mat)) / (max(env_mat) - min(env_mat))
+  matplot(env_mat, type = "l")
+  
+  
+  env_df <- tidyr::pivot_longer(cbind.data.frame(time = 1:timesteps, env_mat), cols = (1:ncol(env_mat)+1), names_to = "patch", values_to = "env")
+  env_df %>% 
+    ggplot(aes(x = time, y= env, color = patch)) + geom_line(alpha = 0.2, show.legend = F) + theme_bw() + scale_color_viridis_d()
+  
+  return(env_df)
 }
+
+
+# env_generate <- function(landscape, x_dim, y_dim, spat_auto = 0.5, temp_auto = 0, timesteps = 1000, A, k, w, phi){
+#   grid <- list(x = seq(0, 100, length.out = 100), y = seq(0, 100, length.out = 100)) 
+#   
+#   repeat{
+#     obj <-fields::Exp.image.cov(grid = grid, theta=spat_auto, setup=TRUE)
+#     look <- fields::sim.rf(obj)
+#     image.plot( grid$x, grid$y, look) 
+#     points(landscape)
+#     # title("simulated gaussian field")
+#     
+#     sig_mat <- matrix(NA, nrow = timesteps, ncol = nrow(landscape))
+#     sig_mat[1,] <- look[cbind(landscape$x, landscape$y)]
+#     
+#     # sine wave params
+#     A <- A
+#     k <- k # wave number, wavelengths per unit distance
+#     w <- w # angular frequency, relates to speed of propagation, v = w/k
+#     phi <- phi # phase, where in the cycle oscillation is at t=0  
+#     
+#     for(patch in 1:nrow(landscape)){
+#       mean_cond <- sig_mat[1,patch]
+#       with_trend <- mean_cond + A*sin(k*landscape$x[patch] - w*(1:timesteps)) + A*sin(k*landscape$y[patch] - w*(1:timesteps)) + phi
+#       with_noise <- with_trend + generate_noise_ts(a = temp_auto, length = nrow(sig_mat), sd = 0.1)
+#       sig_mat[,patch] <- with_noise
+#       #plot(with_noise, type = 'l')
+#       #spec.mtm(with_noise)
+#       
+#     }
+#     sig_mat <- (sig_mat - min(sig_mat)) / (max(sig_mat) - min(sig_mat))
+#     if(max(sig_mat[1,]) - min(sig_mat[1,]) > 0.6){break}
+#   }
+#   sig_df <- tidyr::pivot_longer(cbind.data.frame(time = 1:timesteps, sig_mat), cols = (1:ncol(sig_mat)+1), names_to = "patch", values_to = "env")
+#   sig_df %>% 
+#     filter(as.numeric(patch) < 10) %>% 
+#     ggplot(aes(x = time, y= env, color = patch)) + geom_line(alpha = 0.8, show.legend = F) + theme_bw()
+#   
+#   return(sig_df)
+# }
 
 # anim <- sig_df %>% left_join(rownames_to_column(landscape, var = "patch")) %>% 
 #   ggplot() +
