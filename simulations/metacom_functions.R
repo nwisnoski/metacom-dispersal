@@ -171,6 +171,50 @@ growth <- function(N, species_traits, r, int_mat){
   return(N_next)
 }
 
+
+get_comp_effects <- function(N, species_traits, r, int_mat){
+  N_growth <- N*0
+  
+  for(i in 1:ncol(N)){
+    N_growth[,i] <- N[,i] * r[,i]
+  }
+  
+  # find inter comp effects on growth
+  int_mat_comp <- int_mat
+  diag(int_mat_comp) <- 0
+  image(int_mat_comp)
+  N_next_inter_only <- N_growth / (1 + N%*%int_mat_comp)
+  N_next_inter_only
+  
+  # find intra comp effects on growth
+  int_mat_comp <- int_mat
+  int_mat_comp[upper.tri(int_mat_comp, diag = FALSE)] <- 0
+  int_mat_comp[lower.tri(int_mat_comp, diag = FALSE)] <- 0
+  image(int_mat_comp)
+  N_next_intra_only <- N_growth / (1 + N%*%int_mat_comp)
+  N_next_intra_only
+  
+  # find full comp effects on growth
+  int_mat_comp <- int_mat
+  image(int_mat_comp)
+  N_next_full <- N_growth / (1 + N%*%int_mat_comp)
+  N_next_full
+  
+  # find effects of no comp on growth
+  int_mat_comp <- int_mat * 0
+  image(int_mat_comp)
+  N_next_nocomp <- N_growth / (1 + N%*%int_mat_comp)
+  N_next_nocomp
+  
+  comp_effects <- list()
+  comp_effects$full <- N_next_full
+  comp_effects$intra <- N_next_intra_only
+  comp_effects$inter <- N_next_inter_only
+  comp_effects$nocomp <- N_next_nocomp
+  
+  return(comp_effects)
+}
+
 # # THompson model
 # env_generate <- function(landscape, env.df, env1Scale = 500, timesteps = 1000, plot = TRUE){
 #   if (missing(env.df)){
