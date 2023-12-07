@@ -310,6 +310,10 @@ for(rep in 1:nreps){
                                                                    filter(dynamics_i, time > 0))
                                            } # end loop calculating N responses for a timeseries
                                            
+                                           # write dynamics to file
+                                           write_csv(x = dynamics_out, col_names = TRUE, 
+                                                     file = here(paste0("sim_output/dynamics/disp_kernel_seedbank_", tstamp ,".csv")))
+                                           
                                            # here is where do temporal beta and variability partitioning
                                            
                                            new <- dynamics_out %>% 
@@ -413,6 +417,6 @@ for(rep in 1:nreps){
     }
   }
 }
-dynamics_total <- dynamics_total %>% unnest(cols = pop_dynamics)
+
 write_csv(x = dynamics_total, col_names = TRUE, 
           file = here(paste0("sim_output/variability_partitioning_disp_kernel_seedbank_", tstamp ,".csv")))
