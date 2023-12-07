@@ -1,8 +1,8 @@
 library(tidyverse)
 library(data.table)
 library(progress)
-library(fields)
-library(multitaper)
+#library(fields)
+#library(multitaper)
 library(vegan)
 library(foreach)
 library(doParallel)
@@ -13,7 +13,7 @@ source(here("analysis/diversity_partitioning.R"))
 
 
 # define parameters
-nreps <- 2
+nreps <- 5
 x_dim <- 100
 y_dim <- 100
 patches <- 100
@@ -22,20 +22,20 @@ full_grid <- FALSE
 #extirp_prob <- 0.000
 
 # environmental var params
-temp_noise_color_vec = c(-0.8, 0, 0.8) # temporal autocorrelation, can range from -1 (blue noise) to 0 (white noise), to +1 (red noise)
-temp_noise_sd_vec = 0.1
+temp_noise_color_vec = 0 #c(-0.8, 0, 0.8) # temporal autocorrelation, can range from -1 (blue noise) to 0 (white noise), to +1 (red noise)
+temp_noise_sd_vec = 0 #c(0, 0.1, 0.5)
 
 # temporal trends (set cycles very high to have no trend)
 cycles <- 100 # how long are interannual cycles in years/timesteps?
 w <- (2*pi) / cycles # angular frequency, oscillations per time interval in radians per second
-A <- 2 # amplitude, peak deviations
+A <- 5 # amplitude, peak deviations
 phi <- 0 # phase, where in the cycle oscillation is at t=0  
 
 
-spat_hetero_vec = c(0.0001, 5, 10) # spatial heterogeneity, higher numbers, steeper slopes
+spat_hetero_vec = c(0.001, .01, .05, .1, 1) # spatial heterogeneity, higher numbers, steeper slopes
 
 
-conditions <- c("stable") # can also be "equal" or "priority"
+conditions <- c("stable", "equal", "priority") # can also be "equal" or "priority"
 
 timesteps <- 100
 initialization <- 200
@@ -44,15 +44,15 @@ burn_in <- 800
 # run sim
 # set.seed(82072)
 
-disp_rates <- 10^seq(-5, 0, length.out = 5)
-kernel_vals <- seq(0, 1, length.out = 2)
+disp_rates <- 10^seq(-5, 0, length.out = 20)
+kernel_vals <- seq(0, 1, length.out = 10)
 disturbance_rates <- seq(0.00, 0.05, length.out = 3)
 
 # remove seed bank
 # germ <- 1
 # surv <- 0
-germ_fracs <- 1 #seq(.1,1, length.out = 10)
-surv_fracs <- 0 #c(.1, .5, 1)
+germ_fracs <- seq(.1,1, length.out = 4)
+surv_fracs <- c(.5, 1)
 
 params <- expand.grid(disp_rates, kernel_vals, disturbance_rates)
 
@@ -64,54 +64,64 @@ dynamics_total <- data.table()
 
 # for each replicate, rerun parameter sweep
 for(rep in 1:nreps){
+  
+  landscape <- if(full_grid == TRUE){
+    expand.grid(x = 1:x_dim, y = 1:y_dim)
+  } else init_landscape(patches = patches, x_dim = x_dim, y_dim = y_dim)
+  
   for(temp_noise_color in temp_noise_color_vec){
     for(temp_noise_sd in temp_noise_sd_vec){
       for(spat_heterogeneity in spat_hetero_vec){
-        for(germ in germ_fracs){
-          for(surv in surv_fracs){
-            
-            
-            # make new landscape, environmental data, and draw new competition coefficients
-            landscape <- if(full_grid == TRUE){
-              expand.grid(x = 1:x_dim, y = 1:y_dim)
-            } else init_landscape(patches = patches, x_dim = x_dim, y_dim = y_dim)
-            
-            env_df <- env_generate(landscape = landscape, 
-                                   spat_heterogeneity = spat_heterogeneity, # spatial autocorrelated, less clustered toward 0, more clustered toward 1
-                                   temp_noise_color = temp_noise_color, # temporal noise autocorrelation, can range from -1 (blue noise) to 0 (white noise), to +1 (red noise)
-                                   temp_noise_sd = temp_noise_sd, # temp noise standard deviation, more or less variable
-                                   timesteps = timesteps+burn_in, A=A, w=w, phi=phi)
-            ggplot(env_df, aes(x = time, y = env, color = patch)) + geom_line(alpha = 0.2, show.legend = FALSE) + theme_minimal()
-            
-            print(paste("Running rep", rep, "of", nreps))
-            for(x in conditions){
+        
+        
+        # make new landscape, environmental data, and draw new competition coefficients
+        
+        
+        env_df <- env_generate(landscape = landscape, 
+                               spat_heterogeneity = spat_heterogeneity, # smaller this is compared to A, the more overlap there is among patches
+                               temp_noise_color = temp_noise_color, # temporal noise autocorrelation, can range from -1 (blue noise) to 0 (white noise), to +1 (red noise)
+                               temp_noise_sd = temp_noise_sd, # temp noise standard deviation, more or less variable
+                               timesteps = timesteps+burn_in, A=A, w=w, phi=phi)
+        env_plot <- ggplot(env_df, aes(x = time, y = env, color = patch)) + 
+          geom_line(alpha = 0.5, show.legend = FALSE) + 
+          labs(title = paste0("rep = ",rep,", noise color = ", temp_noise_color, ", noise sd = ", temp_noise_sd,", spat het = ", spat_heterogeneity)) +
+          theme_minimal()
+        ggsave(plot = env_plot, filename = paste0("figures/env_plots/env_plot_", rep, temp_noise_color, temp_noise_sd, spat_heterogeneity,".pdf"), width = 6, height = 4)
+        
+        print(paste("Running rep", rep, "of", nreps))
+        for(x in conditions){
+          
+          if(x == "equal"){
+            intra = 1 
+            min_inter = 1 
+            max_inter = 1 
+            comp_scaler = 0.05
+          }
+          
+          if(x == "stable"){
+            intra = 1 
+            min_inter = 0 
+            max_inter = 1 
+            comp_scaler = 0.05
+          }
+          
+          if(x == "priority"){
+            intra = 1
+            min_inter = 1
+            max_inter = 2
+            comp_scaler = 0.05
+          }
+          
+          int_mat <- species_int_mat(species = species, intra = intra,
+                                     min_inter = min_inter, max_inter = max_inter,
+                                     comp_scaler = comp_scaler, plot = FALSE)
+          
+          print(paste("Simulating condition:", x))
+          
+          for(germ in germ_fracs){
+            for(surv in surv_fracs){
               
-              if(x == "equal"){
-                intra = 1 
-                min_inter = 1 
-                max_inter = 1 
-                comp_scaler = 0.05
-              }
-              
-              if(x == "stable"){
-                intra = 1 
-                min_inter = 0 
-                max_inter = 1 
-                comp_scaler = 0.05
-              }
-              
-              if(x == "priority"){
-                intra = 1
-                min_inter = 1
-                max_inter = 2
-                comp_scaler = 0.05
-              }
-              
-              int_mat <- species_int_mat(species = species, intra = intra,
-                                         min_inter = min_inter, max_inter = max_inter,
-                                         comp_scaler = comp_scaler, plot = FALSE)
-              
-              print(paste("Simulating condition:", x))
+              print(paste("germ =", germ, "; surv =", surv))
               
               # up until this point, parameters are getting set up for this run 
               
@@ -405,4 +415,4 @@ for(rep in 1:nreps){
 }
 dynamics_total <- dynamics_total %>% unnest(cols = pop_dynamics)
 write_csv(x = dynamics_total, col_names = TRUE, 
-          file = here(paste0("sim_output/variability_partitioning_", tstamp ,".csv")))
+          file = here(paste0("sim_output/variability_partitioning_disp_kernel_seedbank_", tstamp ,".csv")))

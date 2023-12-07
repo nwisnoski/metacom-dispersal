@@ -308,7 +308,7 @@ env_generate <- function(landscape,
   # add one timeseries on top of starting conditions
   sim_ts_trend <- A*sin(w*(1:timesteps) + phi)
   sim_ts_trend_noise <- sim_ts_trend + generate_noise_ts(a = temp_noise_color, length = nrow(env_mat), sd = temp_noise_sd)
-  plot(sim_ts_trend_noise, type = 'l')
+  
   
   env_mat <- env_mat + sim_ts_trend_noise
   
@@ -317,12 +317,12 @@ env_generate <- function(landscape,
   # 
   
   env_mat <- (env_mat - min(env_mat)) / (max(env_mat) - min(env_mat))
-  matplot(env_mat, type = "l")
+  # matplot(env_mat, type = "l")
   
   
   env_df <- tidyr::pivot_longer(cbind.data.frame(time = 1:timesteps, env_mat), cols = (1:ncol(env_mat)+1), names_to = "patch", values_to = "env")
-  env_df %>% 
-    ggplot(aes(x = time, y= env, color = patch)) + geom_line(alpha = 0.2, show.legend = F) + theme_bw() + scale_color_viridis_d()
+  # env_df %>% 
+  #   ggplot(aes(x = time, y= env, color = patch)) + geom_line(alpha = 0.2, show.legend = F) + theme_bw() + scale_color_viridis_d()
   
   return(env_df)
 }
