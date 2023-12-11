@@ -11,7 +11,7 @@ source(here("analysis/diversity_partitioning.R"))
 
 
 # define parameters
-nreps <- 5
+nreps <- 10
 x_dim <- 100
 y_dim <- 100
 patches <- 100
@@ -44,7 +44,7 @@ burn_in <- 800
 
 disp_rates <- 10^seq(-5, 0, length.out = 20)
 kernel_vals <- seq(0, 1, length.out = 10)
-disturbance_rates <- 0 #seq(0.00, 0.05, length.out = 3)
+disturbance_rates <- 0.01 #seq(0.00, 0.05, length.out = 3)
 
 # remove seed bank
 # germ <- 1
@@ -67,6 +67,7 @@ temp_noise_sd <- .1
 spat_heterogeneity <- 0.1
 
 # for each replicate, rerun parameter sweep
+set.seed(9468751)
 for(rep in 1:nreps){
   
   landscape <- if(full_grid == TRUE){
@@ -358,6 +359,8 @@ for(rep in 1:nreps){
                                    condition = x,
                                    disp_rate = params[p,1],
                                    kernel_exp = params[p,2],
+                                   germ_rate = germ,
+                                   survival_rate = surv,
                                    disturb_rate = params[p,3],
                                    temp_noise_color = temp_noise_color,
                                    temp_noise_sd = temp_noise_sd,
