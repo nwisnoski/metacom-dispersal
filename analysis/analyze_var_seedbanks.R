@@ -8,7 +8,8 @@ variability <- read_csv(here("sim_output/variability_partitioning_disp_kernel_se
   bind_rows(read_csv(here("sim_output/variability_partitioning_disp_kernel_seedbank_2023-12-08_153919.129852.csv"))) |> 
   bind_rows(read_csv(here("sim_output/variability_partitioning_disp_kernel_seedbank_2023-12-08_173926.212731.csv"))) |> 
   bind_rows(read_csv(here("sim_output/variability_partitioning_disp_kernel_seedbank_2023-12-11_140319.539096.csv")))
-  
+
+# use additive diversity partitioning because some sites have mean alpha < 1, which makes beta hard to interpret  
 variability <- variability |> mutate(beta_div = (gamma_div - alpha_div))
   
 
@@ -16,8 +17,8 @@ kernel_exps <- sort(unique(variability$kernel_exp))
 disp_rates <- sort(unique(variability$disp_rate))
 disturb_rates <- sort(unique(variability$disturb_rate))
 
-#### Stable
 
+# first analyze stable conditions
 
 # Diversity patterns
 div_long_stable <- variability %>% 
@@ -32,6 +33,7 @@ div_long_stable <- variability %>%
   mutate(#variability = factor(variability, levels = c("CV_S_L", "CV_C_L", "CV_S_R", "CV_C_R")),
     #synchrony = factor(synchrony, levels = c("phi_S_L2R", "phi_S2C_L", "phi_S2C_R", "phi_C_L2R")),
     div_type = factor(div_type, levels = c("alpha_div", "beta_div", "gamma_div", "beta_spatial", "beta_temporal")))
+
 
 diversity_plot_no_sb <- div_long_stable %>% 
   filter(germ_rate == 1) %>% 

@@ -1,8 +1,6 @@
 library(tidyverse)
 library(data.table)
 library(progress)
-#library(fields)
-#library(multitaper)
 library(vegan)
 library(foreach)
 library(doParallel)
@@ -13,7 +11,7 @@ source(here("analysis/diversity_partitioning.R"))
 
 
 # define parameters
-nreps <- 5
+nreps <- 1
 x_dim <- 100
 y_dim <- 100
 patches <- 100
@@ -31,9 +29,11 @@ w <- (2*pi) / cycles # angular frequency, oscillations per time interval in radi
 A <- 5 # amplitude, peak deviations
 phi <- 0 # phase, where in the cycle oscillation is at t=0  
 
-
-spat_hetero_vec = c(0.001, .01, .05, .1, 1) # spatial heterogeneity, higher numbers, steeper slopes
-
+# spatial heterogeneity, higher numbers, steeper slopes, 
+# more spatial relative to temporal. 
+# lower numbers have temporal but not spatial var
+# higher numbers have spatial but not temporal var
+spat_hetero_vec = c(0, .1, 1, 1000) 
 
 conditions <- c("stable", "equal", "priority") # can also be "equal" or "priority"
 
@@ -42,17 +42,13 @@ initialization <- 200
 burn_in <- 800
 
 # run sim
-# set.seed(82072)
-
 disp_rates <- 10^seq(-5, 0, length.out = 20)
 kernel_vals <- seq(0, 1, length.out = 10)
-disturbance_rates <- seq(0.00, 0.05, length.out = 3)
+disturbance_rates <- seq(0.00, 0.04, length.out = 5)
 
 # remove seed bank
-# germ <- 1
-# surv <- 0
-germ_fracs <- seq(.1,1, length.out = 4)
-surv_fracs <- c(.5, 1)
+germ_fracs <- 1
+surv_fracs <- 0
 
 params <- expand.grid(disp_rates, kernel_vals, disturbance_rates)
 
@@ -157,7 +153,7 @@ for(rep in 1:nreps){
                                            
                                            
                                            N <- init_community(initialization = initialization, species = species, patches = patches)
-                                           N <- N + 1
+                                           N <- N + 1 # no initial dispersal limitation
                                            D <- N*0
                                            
                                            for(i in 1:(initialization + burn_in + timesteps)){
@@ -174,10 +170,9 @@ for(rep in 1:nreps){
                                              # compute r
                                              r <- compute_r_xt(species_traits, env = env, species = species)
                                              
+                                             # record fitness after environmental effects
                                              fitness_env <- r
-                                             
-                                             # compute growth
-                                             #N_hat <- N*r / (1 + N%*%int_mat)
+                                             fitness_env[is.na(fitness_env)] <- 0
                                              
                                              # who germinates? Binomial distributed
                                              N_germ <- germination(N + D, species_traits)
@@ -187,28 +182,9 @@ for(rep in 1:nreps){
                                              
                                              comp_partitions <- get_comp_effects(N_germ, species_traits, r, int_mat)
                                              
-                                             # plot(N_germ, comp_partitions$nocomp - N_germ)
-                                             # plot(N_germ, comp_partitions$intra - N_germ)
-                                             # plot(N_germ, comp_partitions$inter - N_germ)
-                                             # plot(N_germ, comp_partitions$full - N_germ)
-                                             # 
-                                             # plot(comp_partitions$nocomp - N_germ, comp_partitions$intra - N_germ)
-                                             # plot(comp_partitions$nocomp - N_germ, comp_partitions$inter - N_germ)
-                                             # plot(comp_partitions$nocomp - N_germ, comp_partitions$full - N_germ)
-                                             # plot(comp_partitions$intra - comp_partitions$full, comp_partitions$inter - comp_partitions$full)
-                                             # plot(N_germ, comp_partitions$intra - N_germ)
-                                             # plot(N_germ, comp_partitions$inter - N_germ)
-                                             # plot(N_germ, comp_partitions$full - N_germ)
-                                             # 
-                                             # hist((comp_partitions$nocomp - comp_partitions$intra)/comp_partitions$nocomp)
-                                             # hist((comp_partitions$nocomp - comp_partitions$inter)/comp_partitions$nocomp)
-                                             # 
-                                             # plot(fitness_env,((comp_partitions$nocomp - comp_partitions$intra)/comp_partitions$nocomp)/((comp_partitions$nocomp - comp_partitions$inter)/comp_partitions$nocomp))
-                                             # 
-                                             # 
-                                             # plot(fitness_env, (comp_partitions$intra - comp_partitions$inter)/N_germ)
-                                             
+                                             # next extract the actual biotic effect, ie "full" option of previous function
                                              fitness_biotic <- N_hat / N_germ # delta N per capita after accounting for germination numbers in each patch
+                                             fitness_biotic[is.na(fitness_biotic)] <- 0
                                              
                                              # of those that didn't germinate, compute seed bank survival via binomial draw
                                              D_hat <- survival((N + D - N_germ), species_traits) 
@@ -219,7 +195,10 @@ for(rep in 1:nreps){
                                              
                                              N_hat <- matrix(rpois(n = species*patches, lambda = N_hat), ncol = species, nrow = patches) # poisson draw on aboveground
                                              
+                                             # record number of stochastic extinctions and fitness after accounting for demographic stochasticity
                                              stoch_extinct_demo <- (N_hat == 0) & (N_hat_deterministic != 0)
+                                             fitness_stoch_demo <- ((N_hat - N_germ)/N_germ)
+                                             fitness_stoch_demo[is.na(fitness_stoch_demo)] <- 0
                                              
                                              # determine emigrants from aboveground community
                                              E <- matrix(nrow = patches, ncol = species)
@@ -229,17 +208,6 @@ for(rep in 1:nreps){
                                              }
                                              
                                              dispSP <- colSums(E)
-                                             
-                                             # determine immigrants to each patch
-                                             # I_hat_raw <- disp_array[,,1]%*%E
-                                             # I_hat <- t(t(I_hat_raw)/colSums(I_hat_raw))
-                                             # I_hat[is.nan(I_hat)] <- 1
-                                             # I <- sapply(1:species, function(x) {
-                                             #   if(dispSP[x]>0){
-                                             #     table(factor(sample(x = patches, size = dispSP[x], replace = TRUE, prob = I_hat[,x]), levels = 1:patches))
-                                             #   } else {rep(0, patches)}
-                                             # })
-                                             
                                              I_hat_raw <- matrix(nrow = patches, ncol = species)
                                              
                                              for(s in 1:species){
@@ -261,13 +229,20 @@ for(rep in 1:nreps){
                                              rescued_by_dispersal <- (stoch_extinct_demo == TRUE) & (I > 0)
                                              extinct_by_emigration <- ((N_hat - E) <= 0) & (N_hat != 0)
                                              
+                                             # measure per capita population growth after dispersal
+                                             fitness_dispersal <- ((N_hat - E + I) - N_germ)/N_germ
+                                             fitness_dispersal[is.na(fitness_dispersal)] <- 0
+                                             
                                              N <- N_hat - E + I
                                              D <- D_hat 
                                              
-                                             N_before_disturb = N
+                                             # next impose disturbance
+                                             N_before_disturb <- N
                                              N[rbinom(n = species * patches, size = 1, prob = extirp_prob) > 0] <- 0
                                              
-                                             stoch_extinct_env = (N - N_before_disturb) > 0
+                                             stoch_extinct_env <- (N - N_before_disturb) > 0
+                                             fitness_stoch_env <- (N - N_germ) / N_germ
+                                             fitness_stoch_env[is.na(fitness_stoch_env)] <- 0
                                              
                                              # At this point, N contains a snapshot of the community at time i
                                              dynamics_i <- data.table(N = c(N),
@@ -276,7 +251,10 @@ for(rep in 1:nreps){
                                                                       
                                                                       # fitness and competition strengths
                                                                       W_env = c(fitness_env), # fitness with env filtering
-                                                                      W_bio = c(fitness_biotic), # fitness after germination + competition
+                                                                      W_bio = c(fitness_biotic), # fitness after env, competition
+                                                                      W_stoch_demo = c(fitness_stoch_demo), # fitness after env, comp, demo stoch
+                                                                      W_dispersal = c(fitness_dispersal), # fitness after env, comp, demo stoch, dispersal
+                                                                      W_stoch_env = c(fitness_stoch_env), # fitness after env, comp, demo stoch, dispersal, env stoch
                                                                       comp_effects_full = c(comp_partitions$full), # effects of intra and inter competition on growth
                                                                       comp_effects_inter = c(comp_partitions$inter), # effects of inter competition on growth
                                                                       comp_effects_intra = c(comp_partitions$intra), # effects of intra competition on growth
@@ -312,7 +290,7 @@ for(rep in 1:nreps){
                                            
                                            # write dynamics to file
                                            write_csv(x = dynamics_out, col_names = TRUE, 
-                                                     file = here(paste0("sim_output/dynamics/disp_kernel_seedbank_", tstamp ,".csv")))
+                                                     file = here(paste0("sim_output/dynamics/disp_kernel_", tstamp ,".csv")))
                                            
                                            # here is where do temporal beta and variability partitioning
                                            
@@ -417,6 +395,6 @@ for(rep in 1:nreps){
     }
   }
 }
-
+parallel::stopCluster()
 write_csv(x = dynamics_total, col_names = TRUE, 
-          file = here(paste0("sim_output/variability_partitioning_disp_kernel_seedbank_", tstamp ,".csv")))
+          file = here(paste0("sim_output/variability_partitioning_disp_kernel_", tstamp ,".csv")))

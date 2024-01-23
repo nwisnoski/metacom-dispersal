@@ -206,11 +206,12 @@ get_comp_effects <- function(N, species_traits, r, int_mat){
   N_next_nocomp <- N_growth / (1 + N%*%int_mat_comp)
   #N_next_nocomp
   
+  # return per capita growth
   comp_effects <- list()
-  comp_effects$full <- N_next_full
-  comp_effects$intra <- N_next_intra_only
-  comp_effects$inter <- N_next_inter_only
-  comp_effects$nocomp <- N_next_nocomp
+  comp_effects$full <- N_next_full/N
+  comp_effects$intra <- N_next_intra_only/N
+  comp_effects$inter <- N_next_inter_only/N
+  comp_effects$nocomp <- N_next_nocomp/N
   
   return(comp_effects)
 }
