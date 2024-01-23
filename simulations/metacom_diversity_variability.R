@@ -17,7 +17,6 @@ y_dim <- 100
 patches <- 100
 species <- 40
 full_grid <- FALSE
-#extirp_prob <- 0.000
 
 # environmental var params
 temp_noise_color_vec = 0 #c(-0.8, 0, 0.8) # temporal autocorrelation, can range from -1 (blue noise) to 0 (white noise), to +1 (red noise)
@@ -57,7 +56,7 @@ registerDoParallel()
 start_sim <- Sys.time()
 
 dynamics_total <- data.table()
-
+#set.seed(9468751)
 # for each replicate, rerun parameter sweep
 for(rep in 1:nreps){
   
