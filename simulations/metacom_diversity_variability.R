@@ -394,6 +394,5 @@ for(rep in 1:nreps){
     }
   }
 }
-parallel::stopCluster()
 write_csv(x = dynamics_total, col_names = TRUE, 
           file = here(paste0("sim_output/variability_partitioning_disp_kernel_", tstamp ,".csv")))
