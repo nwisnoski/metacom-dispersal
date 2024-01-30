@@ -59,7 +59,7 @@ dynamics_total <- data.table()
 #set.seed(9468751)
 # for each replicate, rerun parameter sweep
 for(rep in 1:nreps){
-  
+  print(paste("Running rep", rep, "of", nreps))
   landscape <- if(full_grid == TRUE){
     expand.grid(x = 1:x_dim, y = 1:y_dim)
   } else init_landscape(patches = patches, x_dim = x_dim, y_dim = y_dim)
@@ -81,9 +81,9 @@ for(rep in 1:nreps){
           geom_line(alpha = 0.5, show.legend = FALSE) + 
           labs(title = paste0("rep = ",rep,", noise color = ", temp_noise_color, ", noise sd = ", temp_noise_sd,", spat het = ", spat_heterogeneity)) +
           theme_minimal()
-        ggsave(plot = env_plot, filename = paste0("figures/env_plots/env_plot_", rep, temp_noise_color, temp_noise_sd, spat_heterogeneity,".pdf"), width = 6, height = 4)
+        #ggsave(plot = env_plot, filename = paste0("figures/env_plots/env_plot_", rep, temp_noise_color, temp_noise_sd, spat_heterogeneity,".pdf"), width = 6, height = 4)
         
-        print(paste("Running rep", rep, "of", nreps))
+        
         for(x in conditions){
           
           if(x == "equal"){
@@ -116,7 +116,7 @@ for(rep in 1:nreps){
           for(germ in germ_fracs){
             for(surv in surv_fracs){
               
-              print(paste("germ =", germ, "; surv =", surv))
+              print(paste("germ =", germ, "; surv =", surv, "; spat_het =", spat_heterogeneity))
               
               # up until this point, parameters are getting set up for this run 
               
@@ -377,16 +377,13 @@ for(rep in 1:nreps){
                                            return(output_summary) # this return means this is final information taken into dynamics_list
                                          }, silent = FALSE, outFile = "errors.log")
                                        }
-              
+              print(paste("---- completed for condition:", x))
               
               fails <- (as.logical(lapply(dynamics_list, is_try_error)) + as.logical(lapply(dynamics_list, is_simple_error)))
               
               dynamics_total_i <- rbindlist(dynamics_list[!fails]) # only binds the runs without errors
               dynamics_total <- bind_rows(dynamics_total, dynamics_total_i)
-              end_sims <- Sys.time()
-              tstamp <- str_replace_all(end_sims, " ", "_") %>% 
-                str_replace_all(":", "")
-              gc()
+              
             }
           }
         }
@@ -394,5 +391,9 @@ for(rep in 1:nreps){
     }
   }
 }
+end_sims <- Sys.time()
+tstamp <- str_replace_all(end_sims, " ", "_") %>% 
+  str_replace_all(":", "")
+gc()
 write_csv(x = dynamics_total, col_names = TRUE, 
           file = here(paste0("sim_output/variability_partitioning_disp_kernel_", tstamp ,".csv")))
