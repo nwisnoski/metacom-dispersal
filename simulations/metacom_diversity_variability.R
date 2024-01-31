@@ -17,6 +17,7 @@ y_dim <- 100
 patches <- 100
 species <- 40
 full_grid <- FALSE
+write_dynamics <- FALSE
 
 # environmental var params
 temp_noise_color_vec = 0 #c(-0.8, 0, 0.8) # temporal autocorrelation, can range from -1 (blue noise) to 0 (white noise), to +1 (red noise)
@@ -288,8 +289,13 @@ for(rep in 1:nreps){
                                            } # end loop calculating N responses for a timeseries
                                            
                                            # write dynamics to file
-                                           write_csv(x = dynamics_out, col_names = TRUE, 
-                                                     file = here(paste0("sim_output/dynamics/disp_kernel_", tstamp ,".csv")))
+                                           if(write_dynamics){
+                                             current_time <- Sys.time()
+                                             tstamp <- str_replace_all(current_time, " ", "_") %>% 
+                                               str_replace_all(":", "")
+                                             write_csv(x = dynamics_out, col_names = TRUE, 
+                                                       file = here(paste0("sim_output/dynamics/disp_kernel_", tstamp ,".csv")))
+                                           }
                                            
                                            # here is where do temporal beta and variability partitioning
                                            
@@ -377,12 +383,15 @@ for(rep in 1:nreps){
                                            return(output_summary) # this return means this is final information taken into dynamics_list
                                          }, silent = FALSE, outFile = "errors.log")
                                        }
-              print(paste("---- completed for condition:", x))
               
               fails <- (as.logical(lapply(dynamics_list, is_try_error)) + as.logical(lapply(dynamics_list, is_simple_error)))
               
               dynamics_total_i <- rbindlist(dynamics_list[!fails]) # only binds the runs without errors
               dynamics_total <- bind_rows(dynamics_total, dynamics_total_i)
+              
+              print(paste("---- completed for condition:", x))
+              
+              
               
             }
           }
@@ -394,6 +403,5 @@ for(rep in 1:nreps){
 end_sims <- Sys.time()
 tstamp <- str_replace_all(end_sims, " ", "_") %>% 
   str_replace_all(":", "")
-gc()
 write_csv(x = dynamics_total, col_names = TRUE, 
           file = here(paste0("sim_output/variability_partitioning_disp_kernel_", tstamp ,".csv")))
