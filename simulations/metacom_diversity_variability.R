@@ -57,6 +57,9 @@ registerDoParallel()
 start_sim <- Sys.time()
 
 dynamics_total <- data.table()
+temp_dyn_per_patch_total <- data.table()
+spat_dyn_over_time_total <- data.table()
+
 #set.seed(9468751)
 # for each replicate, rerun parameter sweep
 for(rep in 1:nreps){
@@ -158,7 +161,7 @@ for(rep in 1:nreps){
                                            
                                            for(i in 1:(initialization + burn_in + timesteps)){
                                              if(i <= initialization){
-                                               if(i %in% seq(10, 100, by = 10)){
+                                               if(i %in% seq(10, 200, by = 10)){
                                                  N <- N + matrix(rpois(n = species*patches, lambda = 0.5), nrow = patches, ncol = species)
                                                  D <- D + matrix(rpois(n = species*patches, lambda = 0.5), nrow = patches, ncol = species)
                                                }
@@ -335,6 +338,49 @@ for(rep in 1:nreps){
                                              summarize(env_spat_cv = sd(env)/mean(env)) |> 
                                              summarize(env_spat_cv_mean = mean(env_spat_cv))
                                            
+                                           # summarize local pop dynamics
+                                           
+                                           # over time, per patch
+                                           pop_dyn_temporal_per_patch <- dynamics_out |> 
+                                             group_by(rep, species, patch, emigration, kernel_exp, extirp_prob, comp) |> 
+                                             summarize(abundance_mean = mean(N),
+                                                       abundance_var = var(N),
+                                                       occupancy_mean = sum(N>0),
+                                                       W_env_mean = mean(W_env), # fitness with env filtering
+                                                       W_bio_mean = mean(W_bio), # fitness after env, competition
+                                                       W_stoch_demo_mean = mean(W_stoch_demo), # fitness after env, comp, demo stoch
+                                                       W_dispersal_mean = mean(W_dispersal), # fitness after env, comp, demo stoch, dispersal
+                                                       W_final_mean = mean(W_stoch_env),
+                                                       env_mean = mean(env),
+                                                       extinct_by_emigration = sum(extinct_by_emigration),
+                                                       rescued_by_dispersal = sum(rescued_by_dispersal),
+                                                       stoch_extinct_demo = sum(stoch_extinct_demo),
+                                                       stoch_extinct_env = sum(stoch_extinct_env)) |> 
+                                             left_join(select(species_traits, species, 
+                                                              env_niche_optima, env_niche_breadth), by = "species")
+                                          
+                                           # across space, per time
+                                           pop_dyn_spatial_per_time <- dynamics_out |> 
+                                             group_by(rep, species, time, emigration, kernel_exp, extirp_prob, comp) |> 
+                                             summarize(abundance_mean = mean(N),
+                                                       abundance_var = var(N),
+                                                       occupancy_mean = sum(N>0),
+                                                       W_env_mean = mean(W_env), # fitness with env filtering
+                                                       W_bio_mean = mean(W_bio), # fitness after env, competition
+                                                       W_stoch_demo_mean = mean(W_stoch_demo), # fitness after env, comp, demo stoch
+                                                       W_dispersal_mean = mean(W_dispersal), # fitness after env, comp, demo stoch, dispersal
+                                                       W_final_mean = mean(W_stoch_env),
+                                                       env_mean = mean(env),
+                                                       extinct_by_emigration = sum(extinct_by_emigration),
+                                                       rescued_by_dispersal = sum(rescued_by_dispersal),
+                                                       stoch_extinct_demo = sum(stoch_extinct_demo),
+                                                       stoch_extinct_env = sum(stoch_extinct_env)) |> 
+                                             left_join(select(species_traits, species, 
+                                                              env_niche_optima, env_niche_breadth), by = "species")
+                                           
+                                           
+                                           
+                                           
                                            
                                            # make an output table
                                            output_summary <- data.table(
@@ -380,14 +426,24 @@ for(rep in 1:nreps){
                                            
                                            # check that "output_summary" is 1 row, and a lot of columns
                                            
-                                           return(output_summary) # this return means this is final information taken into dynamics_list
+                                           # return(output_summary)
+                                           return(list(summary = output_summary,
+                                                       spatial_per_time = pop_dyn_spatial_per_time,
+                                                       time_per_patch = pop_dyn_temporal_per_patch)) # this return means this is final information taken into dynamics_list
                                          }, silent = FALSE, outFile = "errors.log")
                                        }
               
-              fails <- (as.logical(lapply(dynamics_list, is_try_error)) + as.logical(lapply(dynamics_list, is_simple_error)))
+              summary_list <- dynamics_list |> map_depth(1, "summary")
+              fails <- (as.logical(lapply(summary_list, is_try_error)) + as.logical(lapply(summary_list, is_simple_error)))
               
-              dynamics_total_i <- rbindlist(dynamics_list[!fails]) # only binds the runs without errors
+              dynamics_total_i <- rbindlist(summary_list[!fails]) # only binds the runs without errors
               dynamics_total <- bind_rows(dynamics_total, dynamics_total_i)
+              
+              temp_dyn_per_patch_list_i <- dynamics_list |> map_depth(1, "time_per_patch") |> rbindlist()
+              temp_dyn_per_patch_total <- bind_rows(temp_dyn_per_patch_total, temp_dyn_per_patch_list_i)
+              
+              spat_dyn_over_time_list_i <- dynamics_list |> map_depth(1, "spatial_per_time") |> rbindlist()
+              spat_dyn_over_time_total <- bind_rows(spat_dyn_over_time_total, spat_dyn_over_time_list_i)
               
               print(paste("---- completed for condition:", x))
               
@@ -404,4 +460,8 @@ end_sims <- Sys.time()
 tstamp <- str_replace_all(end_sims, " ", "_") %>% 
   str_replace_all(":", "")
 write_csv(x = dynamics_total, col_names = TRUE, 
-          file = here(paste0("sim_output/variability_partitioning_disp_kernel_", tstamp ,".csv")))
+          file = here(paste0("sim_output/variability_partitioning_disp_kernel_", tstamp ,"_summary.csv")))
+write_csv(x = spat_dyn_over_time_total, col_names = TRUE, 
+          file = here(paste0("sim_output/variability_partitioning_disp_kernel_", tstamp ,"_spat_per_time.csv")))
+write_csv(x = temp_dyn_per_patch_total, col_names = TRUE, 
+          file = here(paste0("sim_output/variability_partitioning_disp_kernel_", tstamp ,"_temp_per_patch.csv")))
