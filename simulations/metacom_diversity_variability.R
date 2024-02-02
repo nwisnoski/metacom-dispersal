@@ -15,7 +15,7 @@ nreps <- 1
 x_dim <- 100
 y_dim <- 100
 patches <- 100
-species <- 40
+species <- 10
 full_grid <- FALSE
 write_dynamics <- FALSE
 
@@ -42,9 +42,9 @@ initialization <- 200
 burn_in <- 800
 
 # run sim
-disp_rates <- 10^seq(-5, 0, length.out = 20)
-kernel_vals <- seq(0, 1, length.out = 10)
-disturbance_rates <- seq(0.00, 0.04, length.out = 5)
+disp_rates <- 10^seq(-5, 0, length.out = 10)
+kernel_vals <- seq(0, 1, length.out = 5)
+disturbance_rates <- seq(0.00, 0.02, length.out = 3)
 
 # remove seed bank
 germ_fracs <- 1
