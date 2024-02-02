@@ -439,11 +439,13 @@ for(rep in 1:nreps){
               dynamics_total_i <- rbindlist(summary_list[!fails]) # only binds the runs without errors
               dynamics_total <- bind_rows(dynamics_total, dynamics_total_i)
               
-              temp_dyn_per_patch_list_i <- dynamics_list |> map_depth(1, "time_per_patch") |> rbindlist()
-              temp_dyn_per_patch_total <- bind_rows(temp_dyn_per_patch_total, temp_dyn_per_patch_list_i)
+              temp_dyn_per_patch_list <- dynamics_list |> map_depth(1, "time_per_patch")
+              temp_dyn_per_patch_i <- rbindlist(temp_dyn_per_patch_list[!fails])
+              temp_dyn_per_patch_total <- bind_rows(temp_dyn_per_patch_total, temp_dyn_per_patch_i)
               
-              spat_dyn_over_time_list_i <- dynamics_list |> map_depth(1, "spatial_per_time") |> rbindlist()
-              spat_dyn_over_time_total <- bind_rows(spat_dyn_over_time_total, spat_dyn_over_time_list_i)
+              spat_dyn_over_time_list <- dynamics_list |> map_depth(1, "spatial_per_time") 
+              spat_dyn_over_time_i <- rbindlist(spat_dyn_over_time_list[!fails])
+              spat_dyn_over_time_total <- bind_rows(spat_dyn_over_time_total, spat_dyn_over_time_i)
               
               print(paste("---- completed for condition:", x))
               
