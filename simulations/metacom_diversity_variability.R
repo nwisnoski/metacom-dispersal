@@ -458,7 +458,8 @@ for(rep in 1:nreps){
 }
 end_sims <- Sys.time()
 tstamp <- str_replace_all(end_sims, " ", "_") %>% 
-  str_replace_all(":", "")
+  str_replace_all(":", "") |> 
+  str_replace("[.]", "_")
 write_csv(x = dynamics_total, col_names = TRUE, 
           file = here(paste0("sim_output/variability_partitioning_disp_kernel_", tstamp ,"_summary.csv")))
 write_csv(x = spat_dyn_over_time_total, col_names = TRUE, 
