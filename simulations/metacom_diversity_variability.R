@@ -352,6 +352,7 @@ for(rep in 1:nreps){
                                                        W_dispersal_mean = mean(W_dispersal), # fitness after env, comp, demo stoch, dispersal
                                                        W_final_mean = mean(W_stoch_env),
                                                        env_mean = mean(env),
+                                                       spat_heterogeneity = spat_heterogeneity,
                                                        extinct_by_emigration = sum(extinct_by_emigration),
                                                        rescued_by_dispersal = sum(rescued_by_dispersal),
                                                        stoch_extinct_demo = sum(stoch_extinct_demo),
@@ -371,6 +372,7 @@ for(rep in 1:nreps){
                                                        W_dispersal_mean = mean(W_dispersal), # fitness after env, comp, demo stoch, dispersal
                                                        W_final_mean = mean(W_stoch_env),
                                                        env_mean = mean(env),
+                                                       spat_heterogeneity = spat_heterogeneity,
                                                        extinct_by_emigration = sum(extinct_by_emigration),
                                                        rescued_by_dispersal = sum(rescued_by_dispersal),
                                                        stoch_extinct_demo = sum(stoch_extinct_demo),
