@@ -342,7 +342,7 @@ for(rep in 1:nreps){
                                            
                                            # over time, per patch
                                            pop_dyn_temporal_per_patch <- dynamics_out |> 
-                                             group_by(rep, species, patch, emigration, kernel_exp, extirp_prob, comp) |> 
+                                             group_by(rep, species, patch, emigration, kernel_exp, extirp_prob, comp, spat_heterogeneity) |> 
                                              summarize(abundance_mean = mean(N),
                                                        abundance_var = var(N),
                                                        occupancy_mean = sum(N>0),
@@ -352,7 +352,6 @@ for(rep in 1:nreps){
                                                        W_dispersal_mean = mean(W_dispersal), # fitness after env, comp, demo stoch, dispersal
                                                        W_final_mean = mean(W_stoch_env),
                                                        env_mean = mean(env),
-                                                       spat_heterogeneity = spat_heterogeneity,
                                                        extinct_by_emigration = sum(extinct_by_emigration),
                                                        rescued_by_dispersal = sum(rescued_by_dispersal),
                                                        stoch_extinct_demo = sum(stoch_extinct_demo),
@@ -362,7 +361,7 @@ for(rep in 1:nreps){
                                           
                                            # across space, per time
                                            pop_dyn_spatial_per_time <- dynamics_out |> 
-                                             group_by(rep, species, time, emigration, kernel_exp, extirp_prob, comp) |> 
+                                             group_by(rep, species, time, emigration, kernel_exp, extirp_prob, comp, spat_heterogeneity) |> 
                                              summarize(abundance_mean = mean(N),
                                                        abundance_var = var(N),
                                                        occupancy_mean = sum(N>0),
@@ -372,7 +371,6 @@ for(rep in 1:nreps){
                                                        W_dispersal_mean = mean(W_dispersal), # fitness after env, comp, demo stoch, dispersal
                                                        W_final_mean = mean(W_stoch_env),
                                                        env_mean = mean(env),
-                                                       spat_heterogeneity = spat_heterogeneity,
                                                        extinct_by_emigration = sum(extinct_by_emigration),
                                                        rescued_by_dispersal = sum(rescued_by_dispersal),
                                                        stoch_extinct_demo = sum(stoch_extinct_demo),
