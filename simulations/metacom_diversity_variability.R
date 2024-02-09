@@ -173,12 +173,16 @@ for(rep in 1:nreps){
                                              # compute r
                                              r <- compute_r_xt(species_traits, env = env, species = species)
                                              
-                                             # record fitness after environmental effects
-                                             fitness_env <- r
-                                             fitness_env[is.na(fitness_env)] <- 0
                                              
                                              # who germinates? Binomial distributed
                                              N_germ <- germination(N + D, species_traits)
+                                             
+                                             # record fitness component after environmental effects
+                                             # several components will be recorded
+                                             fitness_max <- N_germ %*% diag(species_traits$max_r)
+                                             fitness_env <- r * N_germ
+                                             fitness_env[is.na(fitness_env)] <- 0
+                                             
                                              
                                              # of germinating fraction, grow via BH model
                                              N_hat <- growth(N_germ, species_traits, r, int_mat)
@@ -186,7 +190,7 @@ for(rep in 1:nreps){
                                              comp_partitions <- get_comp_effects(N_germ, species_traits, r, int_mat)
                                              
                                              # next extract the actual biotic effect, ie "full" option of previous function
-                                             fitness_biotic <- N_hat / N_germ # delta N per capita after accounting for germination numbers in each patch
+                                             fitness_biotic <- N_hat # N after accounting for growth and competition in each patch
                                              fitness_biotic[is.na(fitness_biotic)] <- 0
                                              
                                              # of those that didn't germinate, compute seed bank survival via binomial draw
@@ -200,7 +204,7 @@ for(rep in 1:nreps){
                                              
                                              # record number of stochastic extinctions and fitness after accounting for demographic stochasticity
                                              stoch_extinct_demo <- (N_hat == 0) & (N_hat_deterministic != 0)
-                                             fitness_stoch_demo <- ((N_hat - N_germ)/N_germ)
+                                             fitness_stoch_demo <- N_hat # N after demo stoch
                                              fitness_stoch_demo[is.na(fitness_stoch_demo)] <- 0
                                              
                                              # determine emigrants from aboveground community
@@ -229,12 +233,13 @@ for(rep in 1:nreps){
                                                } else {rep(0, patches)}
                                              })
                                              
-                                             rescued_by_dispersal <- (stoch_extinct_demo == TRUE) & (I > 0)
+                                             rescued_by_dispersal <- (N_germ != 0) & (N_hat == 0) & (I > 0)
                                              extinct_by_emigration <- ((N_hat - E) <= 0) & (N_hat != 0)
                                              
                                              # measure per capita population growth after dispersal
-                                             fitness_dispersal <- ((N_hat - E + I) - N_germ)/N_germ
+                                             fitness_dispersal <- (N_hat - E + I) # N after emigration and immigration
                                              fitness_dispersal[is.na(fitness_dispersal)] <- 0
+                                             colonizations <- (N_germ == 0) & ((N_hat - E + I) > 0)
                                              
                                              N <- N_hat - E + I
                                              D <- D_hat 
@@ -243,8 +248,8 @@ for(rep in 1:nreps){
                                              N_before_disturb <- N
                                              N[rbinom(n = species * patches, size = 1, prob = extirp_prob) > 0] <- 0
                                              
-                                             stoch_extinct_env <- (N - N_before_disturb) > 0
-                                             fitness_stoch_env <- (N - N_germ) / N_germ
+                                             stoch_extinct_env <- (N - N_before_disturb) < 0
+                                             fitness_stoch_env <- N # N after any disturbances
                                              fitness_stoch_env[is.na(fitness_stoch_env)] <- 0
                                              
                                              # At this point, N contains a snapshot of the community at time i
@@ -253,19 +258,22 @@ for(rep in 1:nreps){
                                                                       patch = 1:patches,
                                                                       
                                                                       # fitness and competition strengths
+                                                                      W_max = c(fitness_max), # max fitness without any limits
                                                                       W_env = c(fitness_env), # fitness with env filtering
                                                                       W_bio = c(fitness_biotic), # fitness after env, competition
+                                                                      #W_bio_full = c(comp_partitions$full), # effects of intra and inter competition on growth, same as W_bio
+                                                                      W_bio_inter = c(comp_partitions$inter), # effects of inter competition on growth
+                                                                      W_bio_intra = c(comp_partitions$intra), # effects of intra competition on growth
+                                                                      #W_bio_none = c(comp_partitions$nocomp), # effects of no competition on growth, same as W_env
                                                                       W_stoch_demo = c(fitness_stoch_demo), # fitness after env, comp, demo stoch
                                                                       W_dispersal = c(fitness_dispersal), # fitness after env, comp, demo stoch, dispersal
                                                                       W_stoch_env = c(fitness_stoch_env), # fitness after env, comp, demo stoch, dispersal, env stoch
-                                                                      comp_effects_full = c(comp_partitions$full), # effects of intra and inter competition on growth
-                                                                      comp_effects_inter = c(comp_partitions$inter), # effects of inter competition on growth
-                                                                      comp_effects_intra = c(comp_partitions$intra), # effects of intra competition on growth
-                                                                      comp_effects_none = c(comp_partitions$nocomp), # effects of no competition on growth
+                                                                      
                                                                       
                                                                       # process inferences
                                                                       extinct_by_emigration = c(extinct_by_emigration), # did sp go extinct by too high emigration rate
                                                                       rescued_by_dispersal = c(rescued_by_dispersal), # was sp rescued by immigration in this timestep
+                                                                      colonization = c(colonizations), # was there a colonization event
                                                                       stoch_extinct_demo = c(stoch_extinct_demo), # did sp go extinct through demo stoch
                                                                       stoch_extinct_env = c(stoch_extinct_env), # did sp go extinct through env stoch
                                                                       
@@ -339,47 +347,100 @@ for(rep in 1:nreps){
                                              summarize(env_spat_cv_mean = mean(env_spat_cv))
                                            
                                            # summarize local pop dynamics
+                                           dynamics_out <- dynamics_out |> 
+                                             mutate(sink_env = ((N > 0) & (W_env <= 0) & (W_dispersal > 0)),
+                                                    sink_biotic = ((N > 0) & (W_env > 0) & (W_bio <= 0) & (W_dispersal > 0)),
+                                                    sink_stoch_demo = ((N > 0) & (W_env > 0) & (W_bio > 0) & (W_stoch_demo <= 0) & (W_dispersal > 0)), 
+                                             )
                                            
                                            # over time, per patch
                                            pop_dyn_temporal_per_patch <- dynamics_out |> 
                                              group_by(rep, species, patch, emigration, kernel_exp, extirp_prob, comp, spat_heterogeneity) |> 
+                                             left_join(select(species_traits, species, 
+                                                              env_niche_optima, env_niche_breadth), by = "species") |> 
                                              summarize(abundance_mean = mean(N),
                                                        abundance_var = var(N),
-                                                       occupancy_mean = sum(N>0),
-                                                       W_env_mean = mean(W_env), # fitness with env filtering
-                                                       W_bio_mean = mean(W_bio), # fitness after env, competition
-                                                       W_stoch_demo_mean = mean(W_stoch_demo), # fitness after env, comp, demo stoch
-                                                       W_dispersal_mean = mean(W_dispersal), # fitness after env, comp, demo stoch, dispersal
-                                                       W_final_mean = mean(W_stoch_env),
+                                                       occupancy = sum(N>0),
+                                                       
+                                                       # N after each process
+                                                       W_max = mean(W_max), # N if no limits on growth
+                                                       W_env_mean = mean(W_env), # N after env filtering
+                                                       W_bio_mean = mean(W_bio), # N after env, competition
+                                                       W_bio_inter_mean = mean(W_bio_inter), # N after env, and inter comp
+                                                       W_bio_intra_mean = mean(W_bio_intra), # N after env, and intra comp
+                                                       W_stoch_demo_mean = mean(W_stoch_demo), # N after env, comp, demo stoch
+                                                       W_dispersal_mean = mean(W_dispersal), # N after env, comp, demo stoch, dispersal
+                                                       W_stoch_env_mean = mean(W_stoch_env), # N after env, comp, demo stoch, dispersal, and disturbance
+                                                       
+                                                       # delta N due to each process
+                                                       delta_env = mean(W_env - W_max),
+                                                       delta_bio = mean(W_bio - W_env),
+                                                       delta_bio_inter = mean(W_bio_inter - W_env),
+                                                       delta_bio_intra = mean(W_bio_intra - W_env),
+                                                       delta_stoch_demo = mean(W_stoch_demo - W_bio),
+                                                       delta_dispersal = mean(W_dispersal - W_stoch_demo),
+                                                       delta_stoch_env = mean(W_stoch_env - W_dispersal),
+                                                       
+                                                       # env properties
                                                        env_mean = mean(env),
+                                                       env_mismatch = mean(abs(env - env_niche_optima)), # how far is this species from its optimum
                                                        extinct_by_emigration = sum(extinct_by_emigration),
                                                        rescued_by_dispersal = sum(rescued_by_dispersal),
+                                                       colonization = sum(colonization),
                                                        stoch_extinct_demo = sum(stoch_extinct_demo),
-                                                       stoch_extinct_env = sum(stoch_extinct_env)) |> 
-                                             left_join(select(species_traits, species, 
-                                                              env_niche_optima, env_niche_breadth), by = "species")
+                                                       stoch_extinct_env = sum(stoch_extinct_env),
+                                                       
+                                                       # sink classification
+                                                       sink_env = sum(sink_env),
+                                                       sink_biotic = sum(sink_biotic),
+                                                       sink_stoch_demo = sum(sink_stoch_demo)) |> 
+                                             filter(abundance_mean != 0)
                                           
                                            # across space, per time
                                            pop_dyn_spatial_per_time <- dynamics_out |> 
                                              group_by(rep, species, time, emigration, kernel_exp, extirp_prob, comp, spat_heterogeneity) |> 
+                                             left_join(select(species_traits, species, 
+                                                              env_niche_optima, env_niche_breadth), by = "species") |> 
                                              summarize(abundance_mean = mean(N),
                                                        abundance_var = var(N),
-                                                       occupancy_mean = sum(N>0),
-                                                       W_env_mean = mean(W_env), # fitness with env filtering
-                                                       W_bio_mean = mean(W_bio), # fitness after env, competition
-                                                       W_stoch_demo_mean = mean(W_stoch_demo), # fitness after env, comp, demo stoch
-                                                       W_dispersal_mean = mean(W_dispersal), # fitness after env, comp, demo stoch, dispersal
-                                                       W_final_mean = mean(W_stoch_env),
+                                                       occupancy = sum(N>0),
+                                                       
+                                                       # N after each process
+                                                       W_max = mean(W_max), # N if no limits on growth
+                                                       W_env_mean = mean(W_env), # N after env filtering
+                                                       W_bio_mean = mean(W_bio), # N after env, competition
+                                                       W_bio_inter_mean = mean(W_bio_inter), # N after env, and inter comp
+                                                       W_bio_intra_mean = mean(W_bio_intra), # N after env, and intra comp
+                                                       W_stoch_demo_mean = mean(W_stoch_demo), # N after env, comp, demo stoch
+                                                       W_dispersal_mean = mean(W_dispersal), # N after env, comp, demo stoch, dispersal
+                                                       W_stoch_env_mean = mean(W_stoch_env), # N after env, comp, demo stoch, dispersal, and disturbance
+                                                       
+                                                       # delta N due to each process
+                                                       delta_env = mean(W_env - W_max),
+                                                       delta_bio = mean(W_bio - W_env),
+                                                       delta_bio_inter = mean(W_bio_inter - W_env),
+                                                       delta_bio_intra = mean(W_bio_intra - W_env),
+                                                       delta_stoch_demo = mean(W_stoch_demo - W_bio),
+                                                       delta_dispersal = mean(W_dispersal - W_stoch_demo),
+                                                       delta_stoch_env = mean(W_stoch_env - W_dispersal),
+                                                       
+                                                       # env properties
                                                        env_mean = mean(env),
+                                                       env_mismatch = mean(abs(env - env_niche_optima)), # how far is this species from its optimum
                                                        extinct_by_emigration = sum(extinct_by_emigration),
                                                        rescued_by_dispersal = sum(rescued_by_dispersal),
+                                                       colonization = sum(colonization),
                                                        stoch_extinct_demo = sum(stoch_extinct_demo),
-                                                       stoch_extinct_env = sum(stoch_extinct_env)) |> 
-                                             left_join(select(species_traits, species, 
-                                                              env_niche_optima, env_niche_breadth), by = "species")
+                                                       stoch_extinct_env = sum(stoch_extinct_env),
+                                                       
+                                                       # sink classification
+                                                       sink_env = sum(sink_env),
+                                                       sink_biotic = sum(sink_biotic),
+                                                       sink_stoch_demo = sum(sink_stoch_demo)) |> 
+                                             filter(abundance_mean != 0)
                                            
                                            
-                                           
+                                          
                                            
                                            
                                            # make an output table
