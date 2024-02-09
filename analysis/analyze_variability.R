@@ -2,16 +2,18 @@ library(tidyverse)
 library(here)
 library(patchwork)
 library(data.table)
+library(lme4)
+library(lmerTest)
 
 theme_set(theme_bw())
 
-subfolder <- "sim_output/summaries_2024-01-25"
-comp_scenario <- "priority"
+subfolder <- "sim_output/2024-02-09_sims/"
+comp_scenario <- "equal"
 
 # load and combine reps
 variability <- data.table()
 i = 1
-for(file in list.files(path = subfolder, pattern = "\\.csv$")){
+for(file in list.files(path = subfolder, pattern = "summary\\.csv$")){
   this_run <- fread(paste(subfolder, file, sep = "/"))
   this_run$rep <- i
   variability <- bind_rows(variability, this_run)
@@ -54,55 +56,26 @@ div_long <- variability |>
 
 
 div_long |> 
-  filter(disturb_rate == 0.01) |> 
-  ggplot(aes(x = disp_rate, y = diversity, color = as.factor(round(kernel_exp,2)))) + 
-  geom_point(alpha = 0.2) + 
-  geom_smooth(method = "gam", formula = y ~ s(x, k = 20, bs = "cs"), se = F) +
-  scale_x_log10() +
-  scale_color_viridis_d() +
-  facet_grid(div_type ~ round(spat_heterogeneity,2), scales = "free_y") +
-  labs(x = "Emigration rate", y = "Diversity", color = "Kernel exponent")
-
-div_long |> 
   filter(disturb_rate == 0.0) |> 
   ggplot(aes(x = disp_rate, y = diversity, color = as.factor(round(kernel_exp,2)))) + 
   geom_point(alpha = 0.2) + 
-  geom_smooth(method = "gam", formula = y ~ s(x, k = 20, bs = "cs"), se = F) +
+  geom_smooth(method = "gam", formula = y ~ s(x, k = 5, bs = "cs"), se = F) +
   scale_x_log10() +
   scale_color_viridis_d() +
   facet_grid(div_type ~ round(spat_heterogeneity,2), scales = "free_y") +
   labs(x = "Emigration rate", y = "Diversity", color = "Kernel exponent")
 
-# 
-# diversity_plot_undisturbed <- div_long |> 
-#   filter(disturb_rate == 0) |> 
-#   ggplot(aes(x = disp_rate, y = diversity, color = as.factor(round(kernel_exp,2)))) + 
-#   geom_point(alpha = 0.2) + 
-#   #geom_smooth(method = "loess", span = .5, se = FALSE) + 
-#   geom_smooth(method = "gam", formula = y ~ s(x, k = 20, bs = "cs"), se = F) +
-#   scale_x_log10() +
-#   scale_color_viridis_d() +
-#   facet_grid(div_type ~ round(disturb_rate,2), scales = "free_y") +
-#   labs(x = "Emigration rate", y = "Diversity", color = "Kernel exponent")
-# 
-# diversity_plot_disturbed <- div_long |> 
-#   filter(disturb_rate == 0.04) |> 
-#   ggplot(aes(x = disp_rate, y = diversity, color = as.factor(round(kernel_exp,2)))) + 
-#   geom_point(alpha = 0.2) + 
-#   #geom_smooth(method = "loess", span = .5, se = FALSE) + 
-#   geom_smooth(method = "gam", formula = y ~ s(x, k = 20, bs = "cs"), se = F) +
-#   scale_x_log10() +
-#   scale_color_viridis_d() +
-#   facet_grid(div_type ~ round(disturb_rate,2), scales = "free_y") +
-#   labs(x = "Emigration rate", y = "Diversity", color = "Kernel exponent")
-# 
-# figure_diversity <- diversity_plot_undisturbed + diversity_plot_disturbed +
-#   plot_layout(ncol = 2, guides = "collect") + 
-#   plot_annotation(tag_levels = "A", tag_suffix = ")")
-# 
-# figure_diversity
-# 
-# ggsave(plot = figure_diversity, filename = "figures/fig_diversity.pdf", width = 10, height = 8)
+
+div_long |> 
+  filter(disturb_rate == 0.01) |> 
+  ggplot(aes(x = disp_rate, y = diversity, color = as.factor(round(kernel_exp,2)))) + 
+  geom_point(alpha = 0.2) + 
+  geom_smooth(method = "gam", formula = y ~ s(x, k = 5, bs = "cs"), se = F) +
+  scale_x_log10() +
+  scale_color_viridis_d() +
+  facet_grid(div_type ~ round(spat_heterogeneity,2), scales = "free_y") +
+  labs(x = "Emigration rate", y = "Diversity", color = "Kernel exponent")
+
 
 
 # variability
@@ -124,40 +97,57 @@ var_long <- variability |>
 
 
 panel_var_disturbed <- var_long |> 
-  ggplot(aes(x = disp_rate, y = CV, color = as.factor(round(kernel_exp, 2)))) + 
+  filter(disturb_rate == 0.01, gamma_div > 0) |> 
+  ggplot(aes(x = disp_rate, y = 1/CV, color = as.factor(round(kernel_exp, 2)))) + 
   geom_point(alpha = 0.2) + 
   #geom_smooth(method = "loess", se = FALSE) +
   geom_smooth(method = "gam", formula = y ~ s(x, k = 5, bs = "cs"), se = FALSE) + 
   facet_grid(variability~spat_heterogeneity, scales = "free_y") +
   scale_x_log10() +
+  scale_y_log10() +
   scale_color_viridis_d(option = "A") +
   labs(color = "Dispersal kernel \nexponent",
-       x = "Emigration rate")
+       x = "Emigration rate", y = "Stability (1/CV)")
+panel_var_disturbed
 
 panel_var_undisturbed <- var_long |> 
   filter(disturb_rate == 0, gamma_div > 0) |> 
-  ggplot(aes(x = disp_rate, y = CV, color = as.factor(round(kernel_exp, 2)))) + 
+  ggplot(aes(x = disp_rate, y = 1/CV, color = as.factor(round(kernel_exp, 2)))) + 
   geom_point(alpha = 0.2) + 
   #geom_smooth(method = "loess", se = FALSE) +
-  geom_smooth(method = "gam", formula = y ~ s(x, k = 20, bs = "cs"), se = FALSE) + 
+  geom_smooth(method = "gam", formula = y ~ s(x, k = 5, bs = "cs"), se = FALSE) + 
   facet_grid(variability~spat_heterogeneity, scales = "free_y") +
   scale_x_log10() +
+  scale_y_log10() +
   scale_color_viridis_d(option = "A") +
   labs(color = "Dispersal kernel \nexponent",
-       x = "Emigration rate")
+       x = "Emigration rate", y = "Stability (1/CV)")
+panel_var_undisturbed
 
 
-# fig_disturb_v_undisturb_variability <- panel_var_undisturbed + panel_var_disturbed +
-#   plot_layout(ncol = 2, guides = "collect") + 
-#   plot_annotation(tag_levels = "A", tag_suffix = ")")
-# fig_disturb_v_undisturb_variability
-# ggsave(filename = "figures/variability_stable_disturb_vs_undisturb.pdf",
-#        plot = fig_stable_disturb_v_undisturb_variability,
-#        height = 8, width = 10)
+variability |> 
+  filter(disturb_rate == 0) |> 
+  ggplot(aes(x = disp_rate, y = 1/CV_C_R, color = as.factor(kernel_exp))) + 
+  geom_point(alpha = 0.3) + 
+  geom_smooth(method = "lm", se=FALSE) +
+  geom_smooth(aes(color = NULL), method = "lm", se=FALSE, color = "black") +
+  facet_grid(spat_heterogeneity~condition, scales = "free") +
+  scale_x_log10() +
+  labs(x = "Emigration rate", y = "Metacommunity stability (1/CV)")
+# metacommunities overall are quite stable when there's spatial heterogeneity
+# but this is enhanced by stable species interactions too
 
-
-
-
+variability |> 
+  filter(disturb_rate == 0) |> 
+  ggplot(aes(x = disp_rate, y = 1/CV_C_L, color = as.factor(kernel_exp))) + 
+  geom_point(alpha = 0.3) + 
+  geom_smooth(method = "lm", se=FALSE) +
+  geom_smooth(aes(color = NULL), method = "lm", se=FALSE, color = "black") +
+  facet_grid(spat_heterogeneity~condition, scales = "free") +
+  scale_x_log10() +
+  labs(x = "Emigration rate", y = "Local stability (1/CV)")
+# local stability enhanced by emigration rate and flat kernels in non-spatial environments
+# but reduced by emigration and steep kernels in spatial environments
 
 # now look at the phi values, the scaling coefficients
 
@@ -166,76 +156,89 @@ panel_phi_disturbed <- var_long |>
   filter(disturb_rate == 0.01, gamma_div > 0) |> 
   ggplot(aes(x = disp_rate, y = phi, color = as.factor(round(kernel_exp, 2)))) + 
   geom_point(alpha = 0.2) + 
-  geom_smooth(method = "gam", formula = y ~ s(x, k = 6, bs = "cs"), se = FALSE) + 
+  geom_smooth(method = "gam", formula = y ~ s(x, k = 5, bs = "cs"), se = FALSE) + 
   facet_grid(synchrony~spat_heterogeneity, scales = "free_y") +
   scale_x_log10() +
+  scale_y_continuous(limits = c(0,1)) +
   scale_color_viridis_d(option = "A") +
   labs(color = "Dispersal kernel \nexponent",
        x = "Emigration rate", y = "Synchrony (phi)") 
+panel_phi_disturbed
 
 panel_phi_undisturbed <- var_long |> 
   filter(disturb_rate == 0, gamma_div > 0) |> 
   ggplot(aes(x = disp_rate, y = phi, color = as.factor(round(kernel_exp, 2)))) + 
   geom_point(alpha = 0.2) + 
-  geom_smooth(method = "gam", formula = y ~ s(x, k = 6, bs = "cs"), se = FALSE) + 
+  geom_smooth(method = "gam", formula = y ~ s(x, k = 5, bs = "cs"), se = FALSE) + 
   facet_grid(synchrony~spat_heterogeneity, scales = "free_y") +
   scale_x_log10() +
   scale_color_viridis_d(option = "A") +
   labs(color = "Dispersal kernel \nexponent",
        x = "Emigration rate", y = "Synchrony (phi)") 
-# fig_stable_disturb_v_undisturb_phi <- panel_stable_phi_undisturbed + panel_stable_phi_disturbed +
-#   plot_layout(ncol = 2, guides = "collect") + 
-#   plot_annotation(tag_levels = "A", tag_suffix = ")")
-# fig_stable_disturb_v_undisturb_phi
-# ggsave(filename = "figures/variability_phi_stable_disturb_vs_undisturb.pdf",
-#        plot = fig_stable_disturb_v_undisturb_phi,
-#        height = 8, width = 10)
-
+panel_phi_undisturbed
 
 
 
 # now diversity-stability relationships
 
 variability |> 
-  filter(spat_heterogeneity == 1000) |> 
   filter(condition == comp_scenario, disturb_rate == 0) |> 
-  ggplot(aes(x = alpha_div, y = CV_C_L)) + 
+  ggplot(aes(x = alpha_div, y = 1/CV_C_R, color = as.factor(disp_rate))) + 
   geom_point(alpha = 0.3) + 
   geom_smooth(method = "lm", se=FALSE) +
-  facet_grid(as.factor(kernel_exp) ~ as.factor(disp_rate), scales = "free")
+  geom_smooth(aes(color = NULL), method = "lm", se=FALSE, color = "black") +
+  facet_grid(as.factor(kernel_exp) ~ spat_heterogeneity, scales = "free") +
+  labs(x = "Mean alpha-diversity", y = "Metacommunity stability (1/CV)")
 
 variability |> 
-  filter(spat_heterogeneity == 0) |> 
   filter(condition == comp_scenario, disturb_rate == 0) |> 
-  filter(kernel_exp %in% c(0,1)) |> 
-  ggplot(aes(x = alpha_div, y = CV_C_L, color = as.factor(disp_rate))) + 
+  ggplot(aes(x = beta_div, y = 1/CV_C_R, color = as.factor(disp_rate))) + 
   geom_point(alpha = 0.3) + 
   geom_smooth(method = "lm", se=FALSE) +
-  facet_wrap(~as.factor(kernel_exp), scales = "free") + 
-  scale_color_viridis_d() +
-  theme_minimal() +
-  theme(legend.position = "none")
-
-
-# local dsrs
-variability |> 
-  filter(condition == "equal",
-         disturb_rate == 0,
-         spat_heterogeneity == 1000) |> 
-  ggplot(aes(x = local_dsr_richness, y = local_dsr_cv, color = as.factor(kernel_exp))) + 
-  geom_point(alpha = .3) + 
-  geom_smooth(method = "lm", se = FALSE) + 
-  facet_wrap(~as.factor(disp_rate), scales = "free") + 
-  scale_color_viridis_d() + 
-  theme_minimal()
-
+  geom_smooth(aes(color = NULL), method = "lm", se=FALSE, color = "black") +
+  facet_grid(as.factor(kernel_exp) ~ spat_heterogeneity, scales = "free") +
+  labs(x = "Beta-diversity", y = "Metacommunity stability (1/CV)")
 
 variability |> 
-  filter(condition == "stable") |> 
-  filter(disturb_rate == 0) |> 
-  ggplot(aes(x = local_dsr_richness, y = local_dsr_cv, color = as.factor(disp_rate))) + 
-  geom_point(alpha = .3) + 
-  geom_smooth(method = "lm", se = FALSE) + 
-  scale_color_viridis_d() + 
-  theme_minimal() 
-  # facet_grid(kernel_exp~spat_heterogeneity)
+  filter(condition == comp_scenario, disturb_rate == 0) |> 
+  ggplot(aes(x = gamma_div, y = 1/CV_C_R, color = as.factor(disp_rate))) + 
+  geom_point(alpha = 0.3) + 
+  geom_smooth(method = "lm", se=FALSE) +
+  geom_smooth(aes(color = NULL), method = "lm", se=FALSE, color = "black") +
+  facet_grid(as.factor(kernel_exp) ~ spat_heterogeneity, scales = "free") +
+  labs(x = "Gamma-diversity", y = "Metacommunity stability (1/CV)")
+
+
+
+# species-env matches
+# load and combine reps
+patches_over_time <- data.table()
+i = 1
+for(file in list.files(path = subfolder, pattern = "temp_per_patch\\.csv$")){
+  this_run <- fread(paste(subfolder, file, sep = "/"))
+  print(paste("Read file:", file))
+  this_run$rep <- i
+  patches_over_time <- bind_rows(patches_over_time, this_run)
+  i = i + 1
+} 
+
+patches_over_time$species <- as.factor(patches_over_time$species)
+patches_over_time$rep <- as.factor(patches_over_time$rep)
+patches_over_time$patch <- as.factor(patches_over_time$patch)
+
+patches_over_time |> 
+  filter(comp == "equal", extirp_prob == 0,
+         spat_heterogeneity == 1) |> 
+  ggplot(aes(x = emigration, y = env_mismatch, color = as.factor(kernel_exp))) + 
+  geom_point(alpha = 0.05) +
+  scale_x_log10() +
+  geom_smooth(formula = y ~ s(x, k = 5, bs = "cs"), se = F) +
+  scale_fill_viridis_c() +
+  facet_wrap(~species, scales = "free_y")
+  
+patches_over_time |> 
+  ggplot(aes(x = colonization, y = rescued_by_dispersal, color = comp)) + 
+  geom_point(alpha = 0.05) +
+  geom_abline(slope = 1, intercept = 0, color = "black") +
+  geom_smooth(formula = y ~ s(x, k = 4, bs = "cs"), se = F) +
+  facet_grid(extirp_prob~spat_heterogeneity, scales = "free_y")
