@@ -9,6 +9,7 @@ theme_set(theme_bw())
 
 subfolder <- "sim_output/2024-02-09_sims/"
 comp_scenario <- "equal"
+comp_scenario <- "equal"
 
 # load and combine reps
 variability <- data.table()
@@ -106,8 +107,10 @@ fig_diversity_disturb <- div_long |>
   labs(x = "Emigration rate", y = "Diversity", color = "Kernel exponent")
 
 
-ggsave("figures/diversity_nodisturb.pdf", plot = fig_diversity_nodisturb, width = 8, heigh = 6)
-ggsave("figures/diversity_disturb.pdf", plot = fig_diversity_disturb, width = 8, heigh = 6)
+ggsave(paste0("figures/",comp_scenario,"_diversity_nodisturb.pdf"), plot = fig_diversity_nodisturb, width = 8, height = 6)
+ggsave(paste0("figures/",comp_scenario,"_diversity_disturb.pdf"), plot = fig_diversity_disturb, width = 8, height = 6)
+ggsave(paste0("figures/",comp_scenario,"_diversity_nodisturb.pdf"), plot = fig_diversity_nodisturb, width = 8, height = 6, dpi = 500, bg = "white")
+ggsave(paste0("figures/",comp_scenario,"_diversity_disturb.pdf"), plot = fig_diversity_disturb, width = 8, height = 6, dpi = 500, bg = "white")
 
 
 
@@ -154,7 +157,7 @@ fig_var_disturb <- var_long |>
               summarize(CV = mean(CV)), size = 1) +
   facet_grid(variability~spat_heterogeneity, scales = "free_y") +
   scale_x_log10() +
-  scale_y_log10() +
+  #scale_y_log10() +
   scale_color_viridis_d(option = "B", end = .9) +
   labs(color = "Dispersal kernel \nexponent",
        x = "Emigration rate", y = "Stability (1/CV)")
@@ -181,13 +184,15 @@ fig_var_nodisturb <- var_long |>
               summarize(CV = mean(CV)), size = 1) +
   facet_grid(variability~spat_heterogeneity, scales = "free_y") +
   scale_x_log10() +
-  scale_y_log10() +
+  #scale_y_log10() +
   scale_color_viridis_d(option = "B", end = .9) +
   labs(color = "Dispersal kernel \nexponent",
        x = "Emigration rate", y = "Stability (1/CV)")
 
-ggsave("figures/variability_nodisturb.pdf", plot = fig_var_nodisturb, width = 8, heigh = 6)
-ggsave("figures/variability_disturb.pdf", plot = fig_var_disturb, width = 8, heigh = 6)
+ggsave(paste0("figures/",comp_scenario,"_variability_nodisturb.pdf"), plot = fig_var_nodisturb, width = 8, height = 6)
+ggsave(paste0("figures/",comp_scenario,"_variability_disturb.pdf"), plot = fig_var_disturb, width = 8, height = 6)
+ggsave(paste0("figures/",comp_scenario,"_variability_nodisturb.pdf"), plot = fig_var_nodisturb, width = 8, height = 6, dpi = 500, bg = "white")
+ggsave(paste0("figures/",comp_scenario,"_variability_disturb.pdf"), plot = fig_var_disturb, width = 8, height = 6, dpi = 500, bg = "white")
 
 
 
@@ -272,9 +277,10 @@ fig_phi_nodisturb <- var_long |>
   labs(color = "Dispersal kernel \nexponent",
        x = "Emigration rate", y = "Synchrony (phi)") 
 
-ggsave("figures/synchrony_nodisturb.pdf", plot = fig_phi_nodisturb, width = 8, heigh = 6)
-ggsave("figures/synchrony_disturb.pdf", plot = fig_phi_disturb, width = 8, heigh = 6)
-
+ggsave(paste0("figures/",comp_scenario,"_synchrony_nodisturb.pdf"), plot = fig_phi_nodisturb, width = 8, height = 6)
+ggsave(paste0("figures/",comp_scenario,"_synchrony_disturb.pdf"), plot = fig_phi_disturb, width = 8, height = 6)
+ggsave(paste0("figures/",comp_scenario,"_synchrony_nodisturb.pdf"), plot = fig_phi_nodisturb, width = 8, height = 6, dpi = 500, bg = "white")
+ggsave(paste0("figures/",comp_scenario,"_synchrony_disturb.pdf"), plot = fig_phi_disturb, width = 8, height = 6, dpi = 500, bg = "white")
 
 # now diversity-stability relationships
 
