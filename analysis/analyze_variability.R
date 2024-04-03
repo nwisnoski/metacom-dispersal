@@ -9,7 +9,8 @@ theme_set(theme_bw())
 
 subfolder <- "sim_output/2024-02-09_sims/"
 comp_scenario <- "equal"
-comp_scenario <- "equal"
+# comp_scenario <- "stable"
+# comp_scenario <- "priority"
 
 # load and combine reps
 variability <- data.table()
@@ -109,8 +110,8 @@ fig_diversity_disturb <- div_long |>
 
 ggsave(paste0("figures/",comp_scenario,"_diversity_nodisturb.pdf"), plot = fig_diversity_nodisturb, width = 8, height = 6)
 ggsave(paste0("figures/",comp_scenario,"_diversity_disturb.pdf"), plot = fig_diversity_disturb, width = 8, height = 6)
-ggsave(paste0("figures/",comp_scenario,"_diversity_nodisturb.pdf"), plot = fig_diversity_nodisturb, width = 8, height = 6, dpi = 500, bg = "white")
-ggsave(paste0("figures/",comp_scenario,"_diversity_disturb.pdf"), plot = fig_diversity_disturb, width = 8, height = 6, dpi = 500, bg = "white")
+ggsave(paste0("figures/",comp_scenario,"_diversity_nodisturb.png"), plot = fig_diversity_nodisturb, width = 8, height = 6, dpi = 500, bg = "white")
+ggsave(paste0("figures/",comp_scenario,"_diversity_disturb.png"), plot = fig_diversity_disturb, width = 8, height = 6, dpi = 500, bg = "white")
 
 
 
@@ -191,8 +192,8 @@ fig_var_nodisturb <- var_long |>
 
 ggsave(paste0("figures/",comp_scenario,"_variability_nodisturb.pdf"), plot = fig_var_nodisturb, width = 8, height = 6)
 ggsave(paste0("figures/",comp_scenario,"_variability_disturb.pdf"), plot = fig_var_disturb, width = 8, height = 6)
-ggsave(paste0("figures/",comp_scenario,"_variability_nodisturb.pdf"), plot = fig_var_nodisturb, width = 8, height = 6, dpi = 500, bg = "white")
-ggsave(paste0("figures/",comp_scenario,"_variability_disturb.pdf"), plot = fig_var_disturb, width = 8, height = 6, dpi = 500, bg = "white")
+ggsave(paste0("figures/",comp_scenario,"_variability_nodisturb.png"), plot = fig_var_nodisturb, width = 8, height = 6, dpi = 500, bg = "white")
+ggsave(paste0("figures/",comp_scenario,"_variability_disturb.png"), plot = fig_var_disturb, width = 8, height = 6, dpi = 500, bg = "white")
 
 
 
@@ -279,8 +280,8 @@ fig_phi_nodisturb <- var_long |>
 
 ggsave(paste0("figures/",comp_scenario,"_synchrony_nodisturb.pdf"), plot = fig_phi_nodisturb, width = 8, height = 6)
 ggsave(paste0("figures/",comp_scenario,"_synchrony_disturb.pdf"), plot = fig_phi_disturb, width = 8, height = 6)
-ggsave(paste0("figures/",comp_scenario,"_synchrony_nodisturb.pdf"), plot = fig_phi_nodisturb, width = 8, height = 6, dpi = 500, bg = "white")
-ggsave(paste0("figures/",comp_scenario,"_synchrony_disturb.pdf"), plot = fig_phi_disturb, width = 8, height = 6, dpi = 500, bg = "white")
+ggsave(paste0("figures/",comp_scenario,"_synchrony_nodisturb.png"), plot = fig_phi_nodisturb, width = 8, height = 6, dpi = 500, bg = "white")
+ggsave(paste0("figures/",comp_scenario,"_synchrony_disturb.png"), plot = fig_phi_disturb, width = 8, height = 6, dpi = 500, bg = "white")
 
 # now diversity-stability relationships
 
