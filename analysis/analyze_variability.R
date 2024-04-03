@@ -59,7 +59,9 @@ div_long <- variability |>
                            levels = c("alpha_div", "gamma_div", "beta_spatial", "beta_temporal"),
                            labels = c("alpha diversity", "gamma diversity", str_wrap("spatial beta diversity", width = 15), str_wrap("temporal beta diversity", width = 15)))) |> 
   mutate(kernel_exp = as.factor(kernel_exp),
-         spat_heterogeneity = as.factor(spat_heterogeneity))
+         spat_heterogeneity = factor(spat_heterogeneity, 
+                                     levels = c(0, 0.1, 1, 1000), 
+                                     labels = c("temporal\nvariation", "spatiotemporal\nvariation", "spatiotemporal\nvariation (more spatial)", "spatial\nvariation")))
 
 
 div_long |> 
@@ -135,7 +137,10 @@ var_long <- variability |>
                                        str_wrap("spatial species synchrony", width = 15),
                                        str_wrap("spatial community synchrony", width = 15)))) |> 
   mutate(kernel_exp = as.factor(kernel_exp),
-         spat_heterogeneity = as.factor(spat_heterogeneity))
+         spat_heterogeneity = factor(spat_heterogeneity, 
+                                     levels = c(0, 0.1, 1, 1000), 
+                                     labels = c("temporal\nvariation", "spatiotemporal\nvariation", "spatiotemporal\nvariation (more spatial)", "spatial\nvariation")))
+
 
 
 
