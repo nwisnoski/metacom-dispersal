@@ -146,7 +146,7 @@ for(rep in 1:nreps){
                                                                           kernel_exp = kernel_exp,
                                                                           germ = germ,
                                                                           survival = surv,
-                                                                          env_niche_breadth = 0.5, 
+                                                                          env_niche_breadth = 0.25, 
                                                                           env_niche_optima = "even")
                                            
                                            disp_array <- generate_dispersal_matrices(landscape, species, patches, species_traits, torus = FALSE)
@@ -170,8 +170,8 @@ for(rep in 1:nreps){
                                                env <- env_df$env[env_df$time == (i - initialization)]
                                              }
                                              
-                                             # compute r
-                                             r <- compute_r_xt(species_traits, env = env, species = species)
+                                             # compute r; -1 allows species to have negative fitness in patches with big mismatch
+                                             r <- compute_r_xt(species_traits, env = env, species = species) - .1
                                              
                                              
                                              # who germinates? Binomial distributed
@@ -348,7 +348,7 @@ for(rep in 1:nreps){
                                            
                                            # summarize local pop dynamics
                                            dynamics_out <- dynamics_out |> 
-                                             mutate(sink_env = ((N > 0) & (W_env <= 0) & (W_dispersal > 0)),
+                                             mutate(sink_env = ((N > 0) & (W_env < 0) & (W_dispersal > 0)),
                                                     sink_biotic = ((N > 0) & (W_env > 0) & (W_bio <= 0) & (W_dispersal > 0)),
                                                     sink_stoch_demo = ((N > 0) & (W_env > 0) & (W_bio > 0) & (W_stoch_demo <= 0) & (W_dispersal > 0)), 
                                              )

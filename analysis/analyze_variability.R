@@ -34,7 +34,8 @@ variability <- variability |>
          phi_S2C_R = replace_na(phi_S2C_R, 0),
          beta_div = replace_na(beta_div, 0),
          env_spat_cv_mean = replace_na(env_spat_cv_mean, 0),
-         env_temp_cv_mean = replace_na(env_temp_cv_mean, 0))
+         env_temp_cv_mean = replace_na(env_temp_cv_mean, 0)) |> 
+  filter(spat_heterogeneity != 1)
   
 
 kernel_exps <- sort(unique(variability$kernel_exp))
@@ -52,29 +53,61 @@ div_long <- variability |>
                names_to = "div_type", values_to = "diversity") |> 
   mutate(#variability = factor(variability, levels = c("CV_S_L", "CV_C_L", "CV_S_R", "CV_C_R")),
          #synchrony = factor(synchrony, levels = c("phi_S_L2R", "phi_S2C_L", "phi_S2C_R", "phi_C_L2R")),
-         div_type = factor(div_type, levels = c("alpha_div", "gamma_div", "beta_spatial", "beta_temporal")))
+         div_type = factor(div_type, levels = c("alpha_div", "gamma_div", "beta_spatial", "beta_temporal"))) |> 
+  mutate(kernel_exp = as.factor(kernel_exp),
+         spat_heterogeneity = as.factor(spat_heterogeneity))
 
 
 div_long |> 
   filter(disturb_rate == 0.0) |> 
-  ggplot(aes(x = disp_rate, y = diversity, color = as.factor(round(kernel_exp,2)))) + 
+  ggplot(aes(x = disp_rate, y = diversity, color = kernel_exp)) + 
   geom_point(alpha = 0.2) + 
   geom_smooth(method = "gam", formula = y ~ s(x, k = 5, bs = "cs"), se = F) +
   scale_x_log10() +
-  scale_color_viridis_d() +
-  facet_grid(div_type ~ round(spat_heterogeneity,2), scales = "free_y") +
+  scale_color_viridis_d(option = "B", end = .9) +
+  facet_grid(div_type ~ spat_heterogeneity, scales = "free_y") +
+  labs(x = "Emigration rate", y = "Diversity", color = "Kernel exponent")
+
+fig_diversity_nodisturb <- div_long |> 
+  filter(disturb_rate == 0.0) |> 
+  ggplot(aes(x = disp_rate, y = diversity, color = kernel_exp)) + 
+  geom_point(alpha = 0.2) + 
+  geom_line(data = div_long |> 
+              filter(disturb_rate == 0.0) |> 
+              group_by(disp_rate, kernel_exp, spat_heterogeneity, div_type) |> 
+              summarize(diversity = mean(diversity)), size = 1) +
+  scale_x_log10() +
+  scale_color_viridis_d(option = "B", end = .9) +
+  facet_grid(div_type ~ spat_heterogeneity, scales = "free_y") +
   labs(x = "Emigration rate", y = "Diversity", color = "Kernel exponent")
 
 
 div_long |> 
   filter(disturb_rate == 0.01) |> 
-  ggplot(aes(x = disp_rate, y = diversity, color = as.factor(round(kernel_exp,2)))) + 
+  ggplot(aes(x = disp_rate, y = diversity, color = kernel_exp)) + 
   geom_point(alpha = 0.2) + 
   geom_smooth(method = "gam", formula = y ~ s(x, k = 5, bs = "cs"), se = F) +
   scale_x_log10() +
-  scale_color_viridis_d() +
-  facet_grid(div_type ~ round(spat_heterogeneity,2), scales = "free_y") +
+  scale_color_viridis_d(option = "B", end = .9) +
+  facet_grid(div_type ~ spat_heterogeneity, scales = "free_y") +
   labs(x = "Emigration rate", y = "Diversity", color = "Kernel exponent")
+
+fig_diversity_disturb <- div_long |> 
+  filter(disturb_rate == 0.01) |> 
+  ggplot(aes(x = disp_rate, y = diversity, color = kernel_exp)) + 
+  geom_point(alpha = 0.2) + 
+  geom_line(data = div_long |> 
+              filter(disturb_rate == 0.01) |> 
+              group_by(disp_rate, kernel_exp, spat_heterogeneity, div_type) |> 
+              summarize(diversity = mean(diversity)), size = 1) +
+  scale_x_log10() +
+  scale_color_viridis_d(option = "B", end = .9) +
+  facet_grid(div_type ~ spat_heterogeneity, scales = "free_y") +
+  labs(x = "Emigration rate", y = "Diversity", color = "Kernel exponent")
+
+
+ggsave("figures/diversity_nodisturb.pdf", plot = fig_diversity_nodisturb, width = 8, heigh = 6)
+ggsave("figures/diversity_disturb.pdf", plot = fig_diversity_disturb, width = 8, heigh = 6)
 
 
 
@@ -87,7 +120,9 @@ var_long <- variability |>
   pivot_longer(cols = c(phi_S_L2R, phi_C_L2R, phi_S2C_L, phi_S2C_R), 
                names_to = "synchrony", values_to = "phi") |> 
   mutate(variability = factor(variability, levels = c("CV_S_L", "CV_C_L", "CV_S_R", "CV_C_R")),
-         synchrony = factor(synchrony, levels = c("phi_S_L2R", "phi_S2C_L", "phi_S2C_R", "phi_C_L2R")))
+         synchrony = factor(synchrony, levels = c("phi_S_L2R", "phi_S2C_L", "phi_S2C_R", "phi_C_L2R"))) |> 
+  mutate(kernel_exp = as.factor(kernel_exp),
+         spat_heterogeneity = as.factor(spat_heterogeneity))
 
 
 
@@ -96,33 +131,64 @@ var_long <- variability |>
 # First, we'll just look at variability at different scales
 
 
-panel_var_disturbed <- var_long |> 
+var_long |> 
   filter(disturb_rate == 0.01, gamma_div > 0) |> 
-  ggplot(aes(x = disp_rate, y = 1/CV, color = as.factor(round(kernel_exp, 2)))) + 
+  ggplot(aes(x = disp_rate, y = 1/CV, color = kernel_exp)) + 
   geom_point(alpha = 0.2) + 
   #geom_smooth(method = "loess", se = FALSE) +
   geom_smooth(method = "gam", formula = y ~ s(x, k = 5, bs = "cs"), se = FALSE) + 
   facet_grid(variability~spat_heterogeneity, scales = "free_y") +
   scale_x_log10() +
   scale_y_log10() +
-  scale_color_viridis_d(option = "A") +
+  scale_color_viridis_d(option = "B", end = .9) +
   labs(color = "Dispersal kernel \nexponent",
        x = "Emigration rate", y = "Stability (1/CV)")
-panel_var_disturbed
 
-panel_var_undisturbed <- var_long |> 
+fig_var_disturb <- var_long |> 
+  filter(disturb_rate == 0.01, gamma_div > 0) |> 
+  ggplot(aes(x = disp_rate, y = 1/CV, color = kernel_exp)) + 
+  geom_point(alpha = 0.2) + 
+  geom_line(data = var_long |> 
+              filter(disturb_rate == 0.01, gamma_div > 0) |> 
+              group_by(disp_rate, kernel_exp, spat_heterogeneity, variability) |> 
+              summarize(CV = mean(CV)), size = 1) +
+  facet_grid(variability~spat_heterogeneity, scales = "free_y") +
+  scale_x_log10() +
+  scale_y_log10() +
+  scale_color_viridis_d(option = "B", end = .9) +
+  labs(color = "Dispersal kernel \nexponent",
+       x = "Emigration rate", y = "Stability (1/CV)")
+
+var_long |> 
   filter(disturb_rate == 0, gamma_div > 0) |> 
-  ggplot(aes(x = disp_rate, y = 1/CV, color = as.factor(round(kernel_exp, 2)))) + 
+  ggplot(aes(x = disp_rate, y = 1/CV, color = kernel_exp)) + 
   geom_point(alpha = 0.2) + 
   #geom_smooth(method = "loess", se = FALSE) +
   geom_smooth(method = "gam", formula = y ~ s(x, k = 5, bs = "cs"), se = FALSE) + 
   facet_grid(variability~spat_heterogeneity, scales = "free_y") +
   scale_x_log10() +
   scale_y_log10() +
-  scale_color_viridis_d(option = "A") +
+  scale_color_viridis_d(option = "B", end = .9) +
   labs(color = "Dispersal kernel \nexponent",
        x = "Emigration rate", y = "Stability (1/CV)")
-panel_var_undisturbed
+fig_var_nodisturb <- var_long |> 
+  filter(disturb_rate == 0, gamma_div > 0) |> 
+  ggplot(aes(x = disp_rate, y = 1/CV, color = kernel_exp)) + 
+  geom_point(alpha = 0.2) + 
+  geom_line(data = var_long |> 
+              filter(disturb_rate == 0.0, gamma_div > 0) |> 
+              group_by(disp_rate, kernel_exp, spat_heterogeneity, variability) |> 
+              summarize(CV = mean(CV)), size = 1) +
+  facet_grid(variability~spat_heterogeneity, scales = "free_y") +
+  scale_x_log10() +
+  scale_y_log10() +
+  scale_color_viridis_d(option = "B", end = .9) +
+  labs(color = "Dispersal kernel \nexponent",
+       x = "Emigration rate", y = "Stability (1/CV)")
+
+ggsave("figures/variability_nodisturb.pdf", plot = fig_var_nodisturb, width = 8, heigh = 6)
+ggsave("figures/variability_disturb.pdf", plot = fig_var_disturb, width = 8, heigh = 6)
+
 
 
 variability |> 
@@ -152,31 +218,62 @@ variability |>
 # now look at the phi values, the scaling coefficients
 
 
-panel_phi_disturbed <- var_long |> 
+var_long |> 
   filter(disturb_rate == 0.01, gamma_div > 0) |> 
-  ggplot(aes(x = disp_rate, y = phi, color = as.factor(round(kernel_exp, 2)))) + 
+  ggplot(aes(x = disp_rate, y = phi, color = kernel_exp)) + 
   geom_point(alpha = 0.2) + 
   geom_smooth(method = "gam", formula = y ~ s(x, k = 5, bs = "cs"), se = FALSE) + 
   facet_grid(synchrony~spat_heterogeneity, scales = "free_y") +
   scale_x_log10() +
   scale_y_continuous(limits = c(0,1)) +
-  scale_color_viridis_d(option = "A") +
+  scale_color_viridis_d(option = "B", end = .9) +
   labs(color = "Dispersal kernel \nexponent",
        x = "Emigration rate", y = "Synchrony (phi)") 
-panel_phi_disturbed
 
-panel_phi_undisturbed <- var_long |> 
+fig_phi_disturb <- var_long |> 
+  filter(disturb_rate == 0.01, gamma_div > 0) |> 
+  ggplot(aes(x = disp_rate, y = phi, color = kernel_exp)) + 
+  geom_point(alpha = 0.2) + 
+  geom_line(data = var_long |> 
+              filter(disturb_rate == 0.01, gamma_div > 0) |> 
+              group_by(disp_rate, kernel_exp, spat_heterogeneity, synchrony) |> 
+              summarize(phi = mean(phi)), size = 1) +
+  facet_grid(synchrony~spat_heterogeneity, scales = "free_y") +
+  scale_x_log10() +
+  scale_y_continuous(limits = c(0,1)) +
+  scale_color_viridis_d(option = "B", end = .9) +
+  labs(color = "Dispersal kernel \nexponent",
+       x = "Emigration rate", y = "Synchrony (phi)") 
+
+
+var_long |> 
   filter(disturb_rate == 0, gamma_div > 0) |> 
-  ggplot(aes(x = disp_rate, y = phi, color = as.factor(round(kernel_exp, 2)))) + 
+  ggplot(aes(x = disp_rate, y = phi, color = kernel_exp)) + 
   geom_point(alpha = 0.2) + 
   geom_smooth(method = "gam", formula = y ~ s(x, k = 5, bs = "cs"), se = FALSE) + 
   facet_grid(synchrony~spat_heterogeneity, scales = "free_y") +
   scale_x_log10() +
-  scale_color_viridis_d(option = "A") +
+  scale_color_viridis_d(option = "B", end = .9) +
   labs(color = "Dispersal kernel \nexponent",
        x = "Emigration rate", y = "Synchrony (phi)") 
-panel_phi_undisturbed
 
+
+fig_phi_nodisturb <- var_long |> 
+  filter(disturb_rate == 0, gamma_div > 0) |> 
+  ggplot(aes(x = disp_rate, y = phi, color = kernel_exp)) + 
+  geom_point(alpha = 0.2) + 
+  geom_line(data = var_long |> 
+              filter(disturb_rate == 0.0, gamma_div > 0) |> 
+              group_by(disp_rate, kernel_exp, spat_heterogeneity, synchrony) |> 
+              summarize(phi = mean(phi)), size = 1) +
+  facet_grid(synchrony~spat_heterogeneity, scales = "free_y") +
+  scale_x_log10() +
+  scale_color_viridis_d(option = "B", end = .9) +
+  labs(color = "Dispersal kernel \nexponent",
+       x = "Emigration rate", y = "Synchrony (phi)") 
+
+ggsave("figures/synchrony_nodisturb.pdf", plot = fig_phi_nodisturb, width = 8, heigh = 6)
+ggsave("figures/synchrony_disturb.pdf", plot = fig_phi_disturb, width = 8, heigh = 6)
 
 
 # now diversity-stability relationships
@@ -242,3 +339,62 @@ patches_over_time |>
   geom_abline(slope = 1, intercept = 0, color = "black") +
   geom_smooth(formula = y ~ s(x, k = 4, bs = "cs"), se = F) +
   facet_grid(extirp_prob~spat_heterogeneity, scales = "free_y")
+
+patches_over_time
+
+
+
+
+## spatial
+space_by_time <- data.table()
+i = 1
+for(file in list.files(path = subfolder, pattern = "spat_per_time\\.csv$")){
+  this_run <- fread(paste(subfolder, file, sep = "/"))
+  print(paste("Read file:", file))
+  this_run$rep <- i
+  space_by_time <- bind_rows(space_by_time, this_run)
+  i = i + 1
+} 
+
+space_by_time$species <- as.factor(space_by_time$species)
+space_by_time$rep <- as.factor(space_by_time$rep)
+
+space_by_time |> 
+  group_by(species, time, spat_heterogeneity, emigration) |> 
+  summarize(occupancy = mean(occupancy)) |> 
+  ggplot(aes(x = time, y = occupancy, color = species)) + 
+  geom_point() + 
+  #geom_errorbar(aes(ymin = occupancy - occupancy_sd, ymax = occupancy + occupancy_sd)) + 
+  geom_line() +
+  facet_grid(spat_heterogeneity ~ emigration) 
+
+space_by_time |> 
+  group_by(species, spat_heterogeneity, emigration, kernel_exp) |> 
+  summarize(occupancy = mean(occupancy), occupancy_sd = sd(occupancy)) |> 
+  ggplot(aes(x = emigration, y = occupancy, color = as.factor(kernel_exp))) + 
+  geom_point() + 
+  geom_errorbar(aes(ymin = occupancy - occupancy_sd, ymax = occupancy + occupancy_sd)) + 
+  geom_line() +
+  scale_x_log10() +
+  facet_grid(spat_heterogeneity ~ species) 
+
+space_by_time |> 
+  group_by(species, spat_heterogeneity, emigration, kernel_exp) |> 
+  summarize(sink_env = mean(sink_env),
+            sink_biotic = mean(sink_biotic),
+            sink_stoch_demo = mean(sink_stoch_demo)) |> 
+  ggplot(aes(x = emigration, y = sink_stoch_demo, color = species)) + 
+  geom_point() + 
+  #geom_errorbar(aes(ymin = occupancy - occupancy_sd, ymax = occupancy + occupancy_sd)) + 
+  geom_line() + 
+  scale_x_log10() +
+  facet_grid(spat_heterogeneity ~ kernel_exp) 
+
+
+space_by_time |> 
+  group_by(species, time) |> 
+  summarize(occupancy = mean(occupancy)) |> 
+  ggplot(aes(x = time, y = occupancy, color = species)) + 
+  geom_point() + 
+  #geom_errorbar(aes(ymin = occupancy - occupancy_sd, ymax = occupancy + occupancy_sd)) + 
+  geom_line()
