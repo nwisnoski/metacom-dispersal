@@ -37,7 +37,7 @@ variability <- variability |>
          beta_div = replace_na(beta_div, 0),
          env_spat_cv_mean = replace_na(env_spat_cv_mean, 0),
          env_temp_cv_mean = replace_na(env_temp_cv_mean, 0)) |> 
-  filter(spat_heterogeneity != 1)
+  filter(spat_heterogeneity != 1) 
   
 
 kernel_exps <- sort(unique(variability$kernel_exp))
@@ -55,7 +55,9 @@ div_long <- variability |>
                names_to = "div_type", values_to = "diversity") |> 
   mutate(#variability = factor(variability, levels = c("CV_S_L", "CV_C_L", "CV_S_R", "CV_C_R")),
          #synchrony = factor(synchrony, levels = c("phi_S_L2R", "phi_S2C_L", "phi_S2C_R", "phi_C_L2R")),
-         div_type = factor(div_type, levels = c("alpha_div", "gamma_div", "beta_spatial", "beta_temporal"))) |> 
+         div_type = factor(div_type, 
+                           levels = c("alpha_div", "gamma_div", "beta_spatial", "beta_temporal"),
+                           labels = c("alpha diversity", "gamma diversity", str_wrap("spatial beta diversity", width = 15), str_wrap("temporal beta diversity", width = 15)))) |> 
   mutate(kernel_exp = as.factor(kernel_exp),
          spat_heterogeneity = as.factor(spat_heterogeneity))
 
@@ -123,8 +125,15 @@ var_long <- variability |>
                names_to = "variability", values_to = "CV") |> 
   pivot_longer(cols = c(phi_S_L2R, phi_C_L2R, phi_S2C_L, phi_S2C_R), 
                names_to = "synchrony", values_to = "phi") |> 
-  mutate(variability = factor(variability, levels = c("CV_S_L", "CV_C_L", "CV_S_R", "CV_C_R")),
-         synchrony = factor(synchrony, levels = c("phi_S_L2R", "phi_S2C_L", "phi_S2C_R", "phi_C_L2R"))) |> 
+  mutate(variability = factor(variability, 
+                              levels = c("CV_S_L", "CV_C_L", "CV_S_R", "CV_C_R"),
+                              labels = c("population", "community", "metapopulation", "metacommunity")),
+         synchrony = factor(synchrony, 
+                            levels = c("phi_S2C_L", "phi_S2C_R", "phi_S_L2R", "phi_C_L2R"),
+                            labels = c(str_wrap("local species synchrony", width = 15),
+                                       str_wrap("regional species synchrony", width = 15),
+                                       str_wrap("spatial species synchrony", width = 15),
+                                       str_wrap("spatial community synchrony", width = 15)))) |> 
   mutate(kernel_exp = as.factor(kernel_exp),
          spat_heterogeneity = as.factor(spat_heterogeneity))
 
