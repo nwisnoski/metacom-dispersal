@@ -459,7 +459,43 @@ fig_competition_effects <- patches_over_time |>
   scale_color_viridis_d(option = "B", end = .9) +
   facet_grid(. ~ spat_heterogeneity) +
   labs(x = "Emigration rate", 
-       y = "Mean fitness effects of \n intra (solid) + inter (dashed) competition",
+       y = "Mean fitness effects of intra (solid) + \n inter (dashed) competition",
+       color = "Dispersal kernel\n exponent")
+
+fig_competition_intra <- patches_over_time |> 
+  filter(comp == comp_scenario, extirp_prob == 0) |> 
+  mutate(intra_comp = (delta_bio_intra)/abundance_mean,
+         inter_comp = (delta_bio_inter)/abundance_mean) |> 
+  group_by(emigration, kernel_exp, spat_heterogeneity) |> 
+  summarize(intra_comp_mean = mean(intra_comp),
+            inter_comp_mean = mean(inter_comp)) |> 
+  ggplot(aes(x = emigration, color = kernel_exp)) + 
+  geom_point(aes(y = intra_comp_mean), alpha = 0.5) +
+  geom_line(aes(y = intra_comp_mean), linetype = "solid") +
+  
+  scale_x_log10() +
+  scale_color_viridis_d(option = "B", end = .9) +
+  facet_grid(. ~ spat_heterogeneity) +
+  labs(x = "Emigration rate", 
+       y = "Mean fitness effects of \n intraspecific competition",
+       color = "Dispersal kernel\n exponent")
+
+fig_competition_inter <- patches_over_time |> 
+  filter(comp == comp_scenario, extirp_prob == 0) |> 
+  mutate(intra_comp = (delta_bio_intra)/abundance_mean,
+         inter_comp = (delta_bio_inter)/abundance_mean) |> 
+  group_by(emigration, kernel_exp, spat_heterogeneity) |> 
+  summarize(intra_comp_mean = mean(intra_comp),
+            inter_comp_mean = mean(inter_comp)) |> 
+  ggplot(aes(x = emigration, color = kernel_exp)) + 
+  geom_point(aes(y = inter_comp_mean), alpha = 0.5) +
+  geom_line(aes(y = inter_comp_mean), linetype = "solid") +
+  
+  scale_x_log10() +
+  scale_color_viridis_d(option = "B", end = .9) +
+  facet_grid(. ~ spat_heterogeneity) +
+  labs(x = "Emigration rate", 
+       y = "Mean fitness effects of \n interspecific competition",
        color = "Dispersal kernel\n exponent")
 
 fig_comp_ratios <- patches_over_time |> 
@@ -546,6 +582,16 @@ ggsave(filename = paste0("figures/",comp_scenario,"_demographic_nodisturb.png"),
        plot = fig_demog_effects, width = 6, height = 4, dpi = 500, bg = "white")
 ggsave(filename = paste0("figures/",comp_scenario,"_demographic_nodisturb.pdf"),
        plot = fig_demog_effects, width = 6, height = 4)
+
+
+# combine abiotic and biotic in one graph
+fig_env_bio_filter <- fig_env_costs + theme(legend.position = "null") + 
+  fig_competition_intra + fig_competition_inter +
+  plot_layout(nrow = 3, guides = "collect")
+ggsave(filename = paste0("figures/",comp_scenario,"_env_bio_filtering_nodisturb.png"),
+       plot = fig_env_bio_filter, width = 6, height = 6, dpi = 500, bg = "white")
+ggsave(filename = paste0("figures/",comp_scenario,"_env_bio_filtering_nodisturb.pdf"),
+       plot = fig_env_bio_filter, width = 6, height = 6, dpi = 500)
 
 # focus on dispersal
 fig_dispersal_effects <- patches_over_time |> 
