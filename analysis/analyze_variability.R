@@ -571,7 +571,7 @@ fig_demo_extinctions <- patches_over_time |>
   scale_color_viridis_d(option = "B", end = .9) +
   facet_grid(. ~ spat_heterogeneity) +
   labs(x = "Emigration rate", 
-       y = "Local extinctions due to \n demographic stochasticity",
+       y = "Mean stochastic \nlocal extinctions",
        color = "Dispersal kernel\n exponent")
 
 fig_demog_effects <- fig_demo_extinctions + 
@@ -587,7 +587,8 @@ ggsave(filename = paste0("figures/",comp_scenario,"_demographic_nodisturb.pdf"),
 # combine abiotic and biotic in one graph
 fig_env_bio_filter <- fig_env_costs + theme(legend.position = "null") + 
   fig_competition_intra + fig_competition_inter +
-  plot_layout(nrow = 3, guides = "collect")
+  plot_layout(nrow = 3, guides = "collect") +
+  plot_annotation(tag_levels = "A")
 ggsave(filename = paste0("figures/",comp_scenario,"_env_bio_filtering_nodisturb.png"),
        plot = fig_env_bio_filter, width = 6, height = 6, dpi = 500, bg = "white")
 ggsave(filename = paste0("figures/",comp_scenario,"_env_bio_filtering_nodisturb.pdf"),
@@ -649,13 +650,21 @@ fig_dispersal_fitness_effects <- patches_over_time |>
   scale_color_viridis_d(option = "B", end = .9) +
   facet_grid(. ~ spat_heterogeneity) +
   labs(x = "Emigration rate", 
-       y = "Mean fitness effects of dispersal",
+       y = "Mean fitness effects \n of dispersal",
        color = "Dispersal kernel\n exponent")
 ggsave(filename = paste0("figures/",comp_scenario,"_dispersal_effects.png"),
        plot = fig_dispersal_fitness_effects, width = 6, height = 3, dpi = 500, bg = "white")
 ggsave(filename = paste0("figures/",comp_scenario,"_dispersal_effects.pdf"),
        plot = fig_dispersal_fitness_effects, width = 6, height = 3)
 
+
+fig_demog <- fig_demo_extinctions + fig_dispersal_fitness_effects +
+  plot_layout(nrow = 2, guides = "collect") +
+  plot_annotation(tag_levels = "A")
+ggsave(filename = paste0("figures/",comp_scenario,"_stoch_dispersal.png"),
+       plot = fig_demog, width = 6, height = 4, dpi = 500, bg = "white")
+ggsave(filename = paste0("figures/",comp_scenario,"_stoch_dispersal.pdf"),
+       plot = fig_demog, width = 6, height = 4)
 
 ## spatial
 space_by_time <- data.table()
