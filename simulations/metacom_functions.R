@@ -1,3 +1,8 @@
+# generalized logistic function
+gen_logistic = function(x, A=0, K=1, B=1, nu=1, Q=1, C=1){
+  A + (K-A)/((C+Q*exp(-B*(x-0.5))^(1/nu)))
+}
+
 # dist.torus function from the packages som.nn
 dist.torus <- function (coors) 
 {
@@ -37,7 +42,10 @@ init_species <- function(species = 10,
                          max_r = 5,
                          dispersal_rate = 0.1,
                          survival = 0.8,
-                         germ = 0.5){
+                         germ = 0.5,
+                         responsive = FALSE,
+                         sb_sensitivity = 10,
+                         sb_maxgerm = 1){
   
   # generate niche optima
 
@@ -62,6 +70,14 @@ init_species <- function(species = 10,
     stop("Enter a number or a vector of length 'species' for dispersal_rate.")
   }
   
+  # generate dormancy rates
+  if(length(germ) != species & length(germ) != 1){
+    stop("Enter a number or a vector of length 'species' for germ.")
+  }
+  if(length(survival) != species & length(survival) != 1){
+    stop("Enter a number or a vector of length 'species' for survival.")
+  }
+  
   # generate max growth rates
   if(length(max_r) != species & length(max_r) != 1){
     stop("Enter a number or a vector of length 'species' for max_r.")
@@ -75,7 +91,10 @@ init_species <- function(species = 10,
     kernel_exp = kernel_exp,
     dispersal_rate = dispersal_rate,
     survival = survival,
-    germ = germ
+    germ = germ,
+    responsive = responsive,
+    sb_sensitivity = sb_sensitivity,
+    sb_maxgerm = sb_maxgerm
   )
   
   # matplot(sapply(X = 1:species, FUN = function(x) {
@@ -145,14 +164,24 @@ survival <- function(N, species_traits){
   return(N_surv)
 }
 
-germination <- function(N, species_traits){
+germination <- function(N, species_traits, r){
   g_prop <- species_traits$germ
   if(nrow(species_traits) != ncol(N)) {stop("Dimensions off")}
   
   N_germ <- N * 0
-  for(i in 1:ncol(N)){
-    #N_surv[,i] <- N[,i] * s_prop[i]
-    N_germ[,i] <- rbinom(n = nrow(N), size = N[,i], prob = g_prop[i])
+  for(i in 1:ncol(N)){ # loop over species 1:nspecies
+    if(species_traits$responsive[i]){
+      # plot(seq(0,1,by=0.0001), gen_logistic(seq(0,1,by=0.0001), A = .5, B = 10, K = 1), type = 'l')
+      germ_ix <- gen_logistic(r[,i]/species_traits$max_r[i], # local conditions in patch x for species i
+                              A = g_prop[i], # min germination rate for species i
+                              B = species_traits$sb_sensitivity[i], # sensitivity to env mismatch to trigger germ
+                              K = species_traits$sb_maxgerm[i]) # is the species bet-hedging even under good conditions
+      # plot(r[,i], germ_ix)
+      N_germ[,i] <- rbinom(n = nrow(N), size = N[,i], prob = germ_ix)
+    }
+    else {
+      N_germ[,i] <- rbinom(n = nrow(N), size = N[,i], prob = g_prop[i])
+    }
   }
   return(N_germ)
 }
@@ -206,7 +235,6 @@ get_comp_effects <- function(N, species_traits, r, int_mat){
   N_next_nocomp <- N_growth / (1 + N%*%int_mat_comp)
   #N_next_nocomp
   
-  # return per capita growth
   comp_effects <- list()
   comp_effects$full <- N_next_full
   comp_effects$intra <- N_next_intra_only
@@ -395,4 +423,5 @@ gm_mean = function(x, na.rm=TRUE, zero.propagate = FALSE){
     exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
   }
 }
+
 
