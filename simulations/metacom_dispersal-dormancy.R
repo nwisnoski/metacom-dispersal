@@ -9,6 +9,7 @@ library(vegan)
 library(foreach)
 library(doParallel)
 library(here)
+library(lubridate)
 source(here("simulations/metacom_functions.R"))
 source(here("analysis/metacommunity_variability_partitioning.R"))
 source(here("analysis/diversity_partitioning.R"))
@@ -20,9 +21,9 @@ x_dim <- 100
 y_dim <- 100
 patches <- 100
 species <- 40
-timesteps <- 100
-initialization <- 200
-burn_in <- 800
+timesteps <- 10
+initialization <- 20
+burn_in <- 80
 full_grid <- FALSE
 write_dynamics <- FALSE
 
