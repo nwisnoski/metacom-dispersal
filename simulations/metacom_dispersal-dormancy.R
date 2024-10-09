@@ -551,8 +551,8 @@ tstamp <- str_replace_all(end_sims, " ", "_") %>%
   str_replace("[.]", "_")
 dir.create(paste0("sim_output/", lubridate::date(tstamp)))
 write_csv(x = dynamics_total, col_names = TRUE, 
-          file = here(paste0("sim_output/", lubridate::date(tstamp), "/variability_partitioning_disp_kernel_seedbank_", tstamp ,"_summary.csv")))
+          file = here(paste0("sim_output/", lubridate::date(tstamp), "/variability_partitioning_disp_kernel_", tstamp ,"_summary.csv")))
 write_csv(x = spat_dyn_over_time_total, col_names = TRUE, 
-          file = here(paste0("sim_output/", lubridate::date(tstamp), "/variability_partitioning_disp_kernel_seedbank_", tstamp ,"_spat_per_time.csv")))
+          file = here(paste0("sim_output/", lubridate::date(tstamp), "/variability_partitioning_disp_kernel_", tstamp ,"_spat_per_time.csv")))
 write_csv(x = temp_dyn_per_patch_total, col_names = TRUE, 
-          file = here(paste0("sim_output/", lubridate::date(tstamp), "/variability_partitioning_disp_kernel_seedbank_", tstamp ,"_temp_per_patch.csv")))
+          file = here(paste0("sim_output/", lubridate::date(tstamp), "/variability_partitioning_disp_kernel_", tstamp ,"_temp_per_patch.csv")))
