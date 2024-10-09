@@ -21,9 +21,9 @@ x_dim <- 100
 y_dim <- 100
 patches <- 100
 species <- 40
-timesteps <- 10
-initialization <- 20
-burn_in <- 80
+timesteps <- 100
+initialization <- 200
+burn_in <- 800
 full_grid <- FALSE
 write_dynamics <- FALSE
 
