@@ -42,7 +42,7 @@ spat_hetero_vec <- c(.1) # spatial heterogeneity, higher numbers, steeper slopes
 env_filter_strength <- 0.1
 
 # competition scenarios
-conditions <- c("equal", "stable", "priority") # can also be "equal" or "priority"
+conditions <- c("equal", "stable") # can also be "equal" or "priority"
 niche_breadth <- 0.25
 
 # dispersal, dormancy, and disturbance rates
