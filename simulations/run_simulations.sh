@@ -6,7 +6,7 @@
 #SBATCH --mem=128GB
 #SBATCH --job-name=metacom_dispersal_dormancy
 
-cd /mnt/scratch/wisnoskilab/GitHub/mc-seedbank-dispersal
+cd /mnt/scratch/wisnoskilab/GitHub/metacom-dispersal
 
 module load R/4.4.0
 
