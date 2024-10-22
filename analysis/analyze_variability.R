@@ -7,7 +7,7 @@ library(lmerTest)
 
 theme_set(theme_bw())
 
-subfolder <- "sim_output/2024-02-09_sims/"
+subfolder <- "sim_output/2024-10-21/"
 comp_scenario <- "equal"
 # comp_scenario <- "stable"
 # comp_scenario <- "priority"
@@ -355,20 +355,20 @@ patches_over_time <- patches_over_time |>
 
 
 # analyze environmental filtering
-patches_over_time |> 
-  filter(comp == comp_scenario, extirp_prob == 0) |> 
-  group_by(emigration, kernel_exp, species, spat_heterogeneity) |> 
-  summarize(env_mismatch_mean = mean(env_mismatch),
-            env_mismatch_sd = sd(env_mismatch)) |> 
-  ggplot(aes(x = emigration, y = env_mismatch_mean, ymin = env_mismatch_mean - env_mismatch_sd,
-             ymax = env_mismatch_mean + env_mismatch_sd, color = species, shape = spat_heterogeneity)) + 
-  geom_point(alpha = 0.5) +
-  geom_errorbar(alpha = 0.5) +
-  geom_line() +
-  scale_x_log10() +
-  scale_fill_viridis_c() +
-  facet_grid(species~kernel_exp, scales = "free_y") +
-  labs(x = "Emigration rate", y = "Environmental mismatch (mean ± s.d.)")
+# patches_over_time |> 
+#   filter(comp == comp_scenario, extirp_prob == 0) |> 
+#   group_by(emigration, kernel_exp, species, spat_heterogeneity) |> 
+#   summarize(env_mismatch_mean = mean(env_mismatch),
+#             env_mismatch_sd = sd(env_mismatch)) |> 
+#   ggplot(aes(x = emigration, y = env_mismatch_mean, ymin = env_mismatch_mean - env_mismatch_sd,
+#              ymax = env_mismatch_mean + env_mismatch_sd, color = species, shape = spat_heterogeneity)) + 
+#   geom_point(alpha = 0.5) +
+#   geom_errorbar(alpha = 0.5) +
+#   geom_line() +
+#   scale_x_log10() +
+#   scale_fill_viridis_c() +
+#   facet_grid(species~kernel_exp, scales = "free_y") +
+#   labs(x = "Emigration rate", y = "Environmental mismatch (mean ± s.d.)")
 
 fig_env_mismatch <- patches_over_time |> 
   filter(comp == comp_scenario, extirp_prob == 0) |> 

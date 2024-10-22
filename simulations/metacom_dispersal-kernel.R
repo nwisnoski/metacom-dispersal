@@ -38,7 +38,7 @@ A <- 5 # amplitude, peak deviations
 phi <- 0 # phase, where in the cycle oscillation is at t=0  
 
 # relative spatial heterogeneity (0 = none)
-spat_hetero_vec <- c(.1) # spatial heterogeneity, higher numbers, steeper slopes
+spat_hetero_vec <- c(0, .1, 1000) # spatial heterogeneity, higher numbers, steeper slopes
 env_filter_strength <- 0.1
 
 # competition scenarios

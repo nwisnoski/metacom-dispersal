@@ -10,4 +10,4 @@ cd /mnt/scratch/wisnoskilab/GitHub/metacom-dispersal
 
 module load R/4.4.0
 
-R CMD BATCH --no-restore --no-save simulations/metacom_dispersal-dormancy.R
+R CMD BATCH --no-restore --no-save simulations/metacom_dispersal-kernel.R
