@@ -7,8 +7,8 @@ library(lmerTest)
 
 theme_set(theme_bw())
 
-subfolder <- "sim_output/2024-10-21/"
-comp_scenario <- "equal"
+subfolder <- "sim_output/2024-10-22/"
+comp_scenario <- "stable"
 # comp_scenario <- "stable"
 # comp_scenario <- "priority"
 
@@ -36,7 +36,8 @@ variability <- variability |>
          phi_S2C_R = replace_na(phi_S2C_R, 0),
          beta_div = replace_na(beta_div, 0),
          env_spat_cv_mean = replace_na(env_spat_cv_mean, 0),
-         env_temp_cv_mean = replace_na(env_temp_cv_mean, 0)) |> 
+         env_temp_cv_mean = replace_na(env_temp_cv_mean, 0),
+         kernel_exp = round(kernel_exp, 4)) |> 
   filter(spat_heterogeneity != 1) 
   
 
@@ -87,7 +88,6 @@ fig_diversity_nodisturb <- div_long |>
   facet_grid(div_type ~ spat_heterogeneity, scales = "free_y") +
   labs(x = "Emigration rate", y = "Diversity", color = "Kernel exponent")
 
-
 # div_long |> 
 #   filter(disturb_rate == 0.01) |> 
 #   ggplot(aes(x = disp_rate, y = diversity, color = kernel_exp)) + 
@@ -117,6 +117,77 @@ ggsave(paste0("figures/",comp_scenario,"_diversity_disturb.pdf"), plot = fig_div
 ggsave(paste0("figures/",comp_scenario,"_diversity_nodisturb.png"), plot = fig_diversity_nodisturb, width = 8, height = 6, dpi = 500, bg = "white")
 ggsave(paste0("figures/",comp_scenario,"_diversity_disturb.png"), plot = fig_diversity_disturb, width = 8, height = 6, dpi = 500, bg = "white")
 
+
+# split into alpha gamma and beta
+fig_diversity_alpha_gamma_nodisturb <- div_long |> 
+  filter(disturb_rate == 0.0, 
+         div_type %in% c("alpha diversity", "gamma diversity")) |> 
+  ggplot(aes(x = disp_rate, y = diversity, color = kernel_exp)) + 
+  geom_point(alpha = 0.2) + 
+  geom_line(data = div_long |> 
+              filter(disturb_rate == 0.0, 
+                     div_type %in% c("alpha diversity", "gamma diversity")) |> 
+              group_by(disp_rate, kernel_exp, spat_heterogeneity, div_type) |> 
+              summarize(diversity = mean(diversity))) +
+  scale_x_log10() +
+  scale_color_viridis_d(option = "B", end = .9) +
+  facet_grid(div_type ~ spat_heterogeneity, scales = "free_y") +
+  labs(x = "Emigration rate", y = "Diversity", color = "Kernel exponent")
+
+fig_diversity_alpha_gamma_disturb <- div_long |> 
+  filter(disturb_rate == 0.01, 
+         div_type %in% c("alpha diversity", "gamma diversity")) |> 
+  ggplot(aes(x = disp_rate, y = diversity, color = kernel_exp)) + 
+  geom_point(alpha = 0.2) + 
+  geom_line(data = div_long |> 
+              filter(disturb_rate == 0.01, 
+                     div_type %in% c("alpha diversity", "gamma diversity")) |> 
+              group_by(disp_rate, kernel_exp, spat_heterogeneity, div_type) |> 
+              summarize(diversity = mean(diversity))) +
+  scale_x_log10() +
+  scale_color_viridis_d(option = "B", end = .9) +
+  facet_grid(div_type ~ spat_heterogeneity, scales = "free_y") +
+  labs(x = "Emigration rate", y = "Diversity", color = "Kernel exponent")
+
+fig_diversity_beta_nodisturb <- div_long |> 
+  filter(disturb_rate == 0.0, 
+         div_type %in% c("spatial beta\ndiversity", "temporal beta\ndiversity")) |> 
+  ggplot(aes(x = disp_rate, y = diversity, color = kernel_exp)) + 
+  geom_point(alpha = 0.2) + 
+  geom_line(data = div_long |> 
+              filter(disturb_rate == 0.0, 
+                     div_type %in% c("spatial beta\ndiversity", "temporal beta\ndiversity")) |> 
+              group_by(disp_rate, kernel_exp, spat_heterogeneity, div_type) |> 
+              summarize(diversity = mean(diversity))) +
+  scale_x_log10() +
+  scale_color_viridis_d(option = "B", end = .9) +
+  facet_grid(div_type ~ spat_heterogeneity, scales = "free_y") +
+  labs(x = "Emigration rate", y = "Diversity", color = "Kernel exponent")
+
+fig_diversity_beta_disturb <- div_long |> 
+  filter(disturb_rate == 0.01, 
+         div_type %in% c("spatial beta\ndiversity", "temporal beta\ndiversity")) |> 
+  ggplot(aes(x = disp_rate, y = diversity, color = kernel_exp)) + 
+  geom_point(alpha = 0.2) + 
+  geom_line(data = div_long |> 
+              filter(disturb_rate == 0.01, 
+                     div_type %in% c("spatial beta\ndiversity", "temporal beta\ndiversity")) |> 
+              group_by(disp_rate, kernel_exp, spat_heterogeneity, div_type) |> 
+              summarize(diversity = mean(diversity))) +
+  scale_x_log10() +
+  scale_color_viridis_d(option = "B", end = .9) +
+  facet_grid(div_type ~ spat_heterogeneity, scales = "free_y") +
+  labs(x = "Emigration rate", y = "Diversity", color = "Kernel exponent")
+
+ggsave(paste0("figures/",comp_scenario,"_diversity_alpha_gamma_nodisturb.pdf"), plot = fig_diversity_alpha_gamma_nodisturb, width = 8, height = 4)
+ggsave(paste0("figures/",comp_scenario,"_diversity_alpha_gamma_disturb.pdf"), plot = fig_diversity_alpha_gamma_disturb, width = 8, height = 4)
+ggsave(paste0("figures/",comp_scenario,"_diversity_alpha_gamma_nodisturb.png"), plot = fig_diversity_alpha_gamma_nodisturb, width = 8, height = 4, dpi = 500, bg = "white")
+ggsave(paste0("figures/",comp_scenario,"_diversity_alpha_gamma_disturb.png"), plot = fig_diversity_alpha_gamma_disturb, width = 8, height = 4, dpi = 500, bg = "white")
+
+ggsave(paste0("figures/",comp_scenario,"_diversity_beta_nodisturb.pdf"), plot = fig_diversity_beta_nodisturb, width = 8, height = 4)
+ggsave(paste0("figures/",comp_scenario,"_diversity_beta_disturb.pdf"), plot = fig_diversity_beta_disturb, width = 8, height = 4)
+ggsave(paste0("figures/",comp_scenario,"_diversity_beta_nodisturb.png"), plot = fig_diversity_beta_nodisturb, width = 8, height = 4, dpi = 500, bg = "white")
+ggsave(paste0("figures/",comp_scenario,"_diversity_beta_disturb.png"), plot = fig_diversity_beta_disturb, width = 8, height = 4, dpi = 500, bg = "white")
 
 
 # variability
@@ -345,7 +416,7 @@ for(file in list.files(path = subfolder, pattern = "temp_per_patch\\.csv$")){
 patches_over_time$species <- as.factor(patches_over_time$species)
 patches_over_time$rep <- as.factor(patches_over_time$rep)
 patches_over_time$patch <- as.factor(patches_over_time$patch)
-patches_over_time$kernel_exp <- as.factor(patches_over_time$kernel_exp)
+patches_over_time$kernel_exp <- as.factor(round(patches_over_time$kernel_exp, 4))
 patches_over_time <- patches_over_time |> 
   filter(spat_heterogeneity != 1) |> 
   mutate(kernel_exp = as.factor(kernel_exp),
@@ -590,9 +661,9 @@ fig_env_bio_filter <- fig_env_costs + theme(legend.position = "null") +
   plot_layout(nrow = 3, guides = "collect") +
   plot_annotation(tag_levels = "A")
 ggsave(filename = paste0("figures/",comp_scenario,"_env_bio_filtering_nodisturb.png"),
-       plot = fig_env_bio_filter, width = 6, height = 6, dpi = 500, bg = "white")
+       plot = fig_env_bio_filter, width = 7, height = 7, dpi = 500, bg = "white")
 ggsave(filename = paste0("figures/",comp_scenario,"_env_bio_filtering_nodisturb.pdf"),
-       plot = fig_env_bio_filter, width = 6, height = 6, dpi = 500)
+       plot = fig_env_bio_filter, width = 7, height = 7, dpi = 500)
 
 # focus on dispersal
 fig_dispersal_effects <- patches_over_time |> 
@@ -662,94 +733,94 @@ fig_demog <- fig_demo_extinctions + fig_dispersal_fitness_effects +
   plot_layout(nrow = 2, guides = "collect") +
   plot_annotation(tag_levels = "A")
 ggsave(filename = paste0("figures/",comp_scenario,"_stoch_dispersal.png"),
-       plot = fig_demog, width = 6, height = 4, dpi = 500, bg = "white")
-ggsave(filename = paste0("figures/",comp_scenario,"_stoch_dispersal.pdf"),
-       plot = fig_demog, width = 6, height = 4)
+       plot = fig_demog, width = 8, height = 6, dpi = 500, bg = "white")
+ ggsave(filename = paste0("figures/",comp_scenario,"_stoch_dispersal.pdf"),
+       plot = fig_demog, width = 8, height = 6)
 
-## spatial
-space_by_time <- data.table()
-i = 1
-for(file in list.files(path = subfolder, pattern = "spat_per_time\\.csv$")){
-  this_run <- fread(paste(subfolder, file, sep = "/"))
-  print(paste("Read file:", file))
-  this_run$rep <- i
-  space_by_time <- bind_rows(space_by_time, this_run)
-  i = i + 1
-} 
-
-space_by_time$species <- as.factor(space_by_time$species)
-space_by_time$rep <- as.factor(space_by_time$rep)
-space_by_time <- space_by_time |> 
-  filter(spat_heterogeneity != 1) |> 
-  mutate(kernel_exp = as.factor(kernel_exp),
-         spat_heterogeneity = factor(spat_heterogeneity, 
-                                     levels = c(0, 0.1, 1, 1000), 
-                                     labels = c("temporal\nvariation", "spatiotemporal\nvariation", "spatiotemporal\nvariation (more spatial)", "spatial\nvariation")))
-
-
-fig_occupancy_var <- space_by_time |> 
-  group_by(species, spat_heterogeneity, emigration, kernel_exp) |> 
-  summarize(occupancy_sd = sd(occupancy)) |> 
-  ggplot(aes(x = emigration, y = occupancy_sd, grouping = species, color = species)) + 
-  geom_point(alpha = 0.5) + 
-  geom_line() +
-  scale_x_log10() +
-  scale_color_viridis_d(option = "H") +
-  facet_grid(kernel_exp ~ spat_heterogeneity) +
-  labs(x = "Emigration rate", 
-       y = "Occupancy variability (s.d.)",
-       color = "Species")
-ggsave(filename = paste0("figures/",comp_scenario,"_occupancy-var.png"),
-       plot = fig_occupancy_var, width = 6, height = 6, dpi = 500, bg = "white")
-ggsave(filename = paste0("figures/",comp_scenario,"_occupancy-var.pdf"),
-       plot = fig_occupancy_var, width = 6, height = 6)
-
-
-fig_spatial_abund_var <- space_by_time |> 
-  filter(comp == comp_scenario) |> 
-  group_by(species, spat_heterogeneity, emigration, kernel_exp) |> 
-  summarize(abundance_sd_mean = mean(sqrt(abundance_var))) |> 
-  ggplot(aes(x = emigration, y = abundance_sd_mean, grouping = species, color = species)) + 
-  geom_point(alpha = 0.5) + 
-  geom_line() +
-  scale_x_log10() +
-  scale_color_viridis_d(option = "H") +
-  facet_grid(kernel_exp ~ spat_heterogeneity) +
-  labs(x = "Emigration rate", 
-       y = "Mean spatial s.d. in abundance",
-       color = "Species")
-ggsave(filename = paste0("figures/",comp_scenario,"_spatial_abund-var.png"),
-       plot = fig_spatial_abund_var, width = 6, height = 6, dpi = 500, bg = "white")
-ggsave(filename = paste0("figures/",comp_scenario,"_spatial_abund-var.pdf"),
-       plot = fig_spatial_abund_var, width = 6, height = 6)
-
-space_by_time |> 
-  group_by(species, spat_heterogeneity, emigration, kernel_exp) |> 
-  summarize(occupancy = mean(occupancy), occupancy_sd = sd(occupancy)) |> 
-  ggplot(aes(x = emigration, y = occupancy, color = as.factor(kernel_exp))) + 
-  geom_point() + 
-  geom_errorbar(aes(ymin = occupancy - occupancy_sd, ymax = occupancy + occupancy_sd)) + 
-  geom_line() +
-  scale_x_log10() +
-  facet_grid(spat_heterogeneity ~ species) 
-
-space_by_time |> 
-  group_by(species, spat_heterogeneity, emigration, kernel_exp) |> 
-  summarize(sink_env = mean(sink_env),
-            sink_biotic = mean(sink_biotic),
-            sink_stoch_demo = mean(sink_stoch_demo)) |> 
-  ggplot(aes(x = emigration, y = sink_stoch_demo, color = species)) + 
-  geom_point() + 
-  #geom_errorbar(aes(ymin = occupancy - occupancy_sd, ymax = occupancy + occupancy_sd)) + 
-  geom_line() + 
-  scale_x_log10() +
-  facet_grid(spat_heterogeneity ~ kernel_exp) 
-
-
-space_by_time |> 
-  group_by(species, time) |> 
-  summarize(occupancy = mean(occupancy)) |> 
-  ggplot(aes(x = time, y = occupancy, color = species)) + 
-  geom_point() + 
-  #geom_errorbar(aes(ymin = occupancy - occupancy_sd, ymax = occupancy + occupancy_sd)) + 
-  geom_line()
+# ## spatial
+# space_by_time <- data.table()
+# i = 1
+# for(file in list.files(path = subfolder, pattern = "spat_per_time\\.csv$")){
+#   this_run <- fread(paste(subfolder, file, sep = "/"))
+#   print(paste("Read file:", file))
+#   this_run$rep <- i
+#   space_by_time <- bind_rows(space_by_time, this_run)
+#   i = i + 1
+# } 
+# 
+# space_by_time$species <- as.factor(space_by_time$species)
+# space_by_time$rep <- as.factor(space_by_time$rep)
+# space_by_time <- space_by_time |> 
+#   filter(spat_heterogeneity != 1) |> 
+#   mutate(kernel_exp = as.factor(kernel_exp),
+#          spat_heterogeneity = factor(spat_heterogeneity, 
+#                                      levels = c(0, 0.1, 1, 1000), 
+#                                      labels = c("temporal\nvariation", "spatiotemporal\nvariation", "spatiotemporal\nvariation (more spatial)", "spatial\nvariation")))
+# 
+# 
+# fig_occupancy_var <- space_by_time |> 
+#   group_by(species, spat_heterogeneity, emigration, kernel_exp) |> 
+#   summarize(occupancy_sd = sd(occupancy)) |> 
+#   ggplot(aes(x = emigration, y = occupancy_sd, grouping = species, color = species)) + 
+#   geom_point(alpha = 0.5) + 
+#   geom_line() +
+#   scale_x_log10() +
+#   scale_color_viridis_d(option = "H") +
+#   facet_grid(kernel_exp ~ spat_heterogeneity) +
+#   labs(x = "Emigration rate", 
+#        y = "Occupancy variability (s.d.)",
+#        color = "Species")
+# ggsave(filename = paste0("figures/",comp_scenario,"_occupancy-var.png"),
+#        plot = fig_occupancy_var, width = 6, height = 6, dpi = 500, bg = "white")
+# ggsave(filename = paste0("figures/",comp_scenario,"_occupancy-var.pdf"),
+#        plot = fig_occupancy_var, width = 6, height = 6)
+# 
+# 
+# fig_spatial_abund_var <- space_by_time |> 
+#   filter(comp == comp_scenario) |> 
+#   group_by(species, spat_heterogeneity, emigration, kernel_exp) |> 
+#   summarize(abundance_sd_mean = mean(sqrt(abundance_var))) |> 
+#   ggplot(aes(x = emigration, y = abundance_sd_mean, grouping = species, color = species)) + 
+#   geom_point(alpha = 0.5) + 
+#   geom_line() +
+#   scale_x_log10() +
+#   scale_color_viridis_d(option = "H") +
+#   facet_grid(kernel_exp ~ spat_heterogeneity) +
+#   labs(x = "Emigration rate", 
+#        y = "Mean spatial s.d. in abundance",
+#        color = "Species")
+# ggsave(filename = paste0("figures/",comp_scenario,"_spatial_abund-var.png"),
+#        plot = fig_spatial_abund_var, width = 6, height = 6, dpi = 500, bg = "white")
+# ggsave(filename = paste0("figures/",comp_scenario,"_spatial_abund-var.pdf"),
+#        plot = fig_spatial_abund_var, width = 6, height = 6)
+# 
+# space_by_time |> 
+#   group_by(species, spat_heterogeneity, emigration, kernel_exp) |> 
+#   summarize(occupancy = mean(occupancy), occupancy_sd = sd(occupancy)) |> 
+#   ggplot(aes(x = emigration, y = occupancy, color = as.factor(kernel_exp))) + 
+#   geom_point() + 
+#   geom_errorbar(aes(ymin = occupancy - occupancy_sd, ymax = occupancy + occupancy_sd)) + 
+#   geom_line() +
+#   scale_x_log10() +
+#   facet_grid(spat_heterogeneity ~ species) 
+# 
+# space_by_time |> 
+#   group_by(species, spat_heterogeneity, emigration, kernel_exp) |> 
+#   summarize(sink_env = mean(sink_env),
+#             sink_biotic = mean(sink_biotic),
+#             sink_stoch_demo = mean(sink_stoch_demo)) |> 
+#   ggplot(aes(x = emigration, y = sink_stoch_demo, color = species)) + 
+#   geom_point() + 
+#   #geom_errorbar(aes(ymin = occupancy - occupancy_sd, ymax = occupancy + occupancy_sd)) + 
+#   geom_line() + 
+#   scale_x_log10() +
+#   facet_grid(spat_heterogeneity ~ kernel_exp) 
+# 
+# 
+# space_by_time |> 
+#   group_by(species, time) |> 
+#   summarize(occupancy = mean(occupancy)) |> 
+#   ggplot(aes(x = time, y = occupancy, color = species)) + 
+#   geom_point() + 
+#   #geom_errorbar(aes(ymin = occupancy - occupancy_sd, ymax = occupancy + occupancy_sd)) + 
+#   geom_line()
