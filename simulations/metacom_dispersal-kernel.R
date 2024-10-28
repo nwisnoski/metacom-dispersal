@@ -47,7 +47,7 @@ niche_breadth <- 0.25
 
 # dispersal, dormancy, and disturbance rates
 disp_rates <- 10^seq(-5, 0, length.out = 20)
-kernel_vals <- 10^seq(-4, -0.5, length.out = 10) # c(0, .1, .25, .5)
+kernel_vals <- c(0, 10^seq(-4, 0, length.out = 9)) # c(0, .1, .25, .5)
 germ_fracs <- 1
 surv_fracs <- 0
 sb_responsive <- c(TRUE, FALSE) # is germination responsive to the environment
