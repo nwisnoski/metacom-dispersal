@@ -39,7 +39,6 @@ phi <- 0 # phase, where in the cycle oscillation is at t=0
 
 # relative spatial heterogeneity (0 = none)
 spat_hetero_vec <- c(0, .1, 1000) # spatial heterogeneity, higher numbers, steeper slopes
-env_filter_strength <- 0.1
 
 # competition scenarios
 conditions <- c("equal", "stable") # can also be "equal" or "priority"
@@ -191,8 +190,8 @@ for(rep in 1:nreps){
                                                env <- env_df$env[env_df$time == (i - initialization)]
                                              }
                                              
-                                             # compute r; -1 allows species to have negative fitness in patches with big mismatch
-                                             r <- compute_r_xt(species_traits, env = env, species = species) - env_filter_strength
+                                             # compute r; 
+                                             r <- compute_r_xt(species_traits, env = env, species = species)
                                              
                                              
                                              # who germinates? Binomial distributed, fixed or responsive
@@ -373,9 +372,9 @@ for(rep in 1:nreps){
                                            
                                            # summarize local pop dynamics
                                            dynamics_out <- dynamics_out |> 
-                                             mutate(sink_env = ((N > 0) & (W_env < 0) & (W_dispersal > 0)),
-                                                    sink_biotic = ((N > 0) & (W_env > 0) & (W_bio <= 0) & (W_dispersal > 0)),
-                                                    sink_stoch_demo = ((N > 0) & (W_env > 0) & (W_bio > 0) & (W_stoch_demo <= 0) & (W_dispersal > 0)), 
+                                             mutate(sink_env = ((N > 0) & (W_env < 1) & (W_dispersal >= 1)),
+                                                    sink_biotic = ((N > 0) & (W_env > 1) & (W_bio < 1) & (W_dispersal >= 1)),
+                                                    sink_stoch_demo = ((N > 0) & (W_env > 1) & (W_bio >= 1) & (W_stoch_demo == 0) & (W_dispersal >= 1)), 
                                              )
                                            
                                            # over time, per patch
