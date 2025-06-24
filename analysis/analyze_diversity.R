@@ -7,7 +7,7 @@ library(lmerTest)
 
 theme_set(theme_bw())
 
-subfolder <- "sim_output/2024-10-28/"
+subfolder <- "sim_output/2025-06-23//"
 comp_scenario <- "stable"
 # comp_scenario <- "stable"
 # comp_scenario <- "priority"
@@ -65,6 +65,10 @@ div_long <- variability |>
                                 labels = c("temporal\nvariation", "spatial + temporal\nvariation", "spatial + temporal\nvariation (more spatial)", "spatial\nvariation")))
 
 
+div_long |> filter(condition == comp_scenario) |> 
+  filter(disturb_rate == 0, div_type == "gamma diversity") |> 
+  group_by(spat_heterogeneity) |> 
+  summarize(diversity = mean(diversity))
 # div_long |> 
 #   filter(disturb_rate == 0.0) |> 
 #   ggplot(aes(x = disp_rate, y = diversity, color = kernel_exp)) + 
