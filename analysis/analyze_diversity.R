@@ -363,7 +363,9 @@ for(file in list.files(path = subfolder, pattern = "temp_per_patch\\.csv$")){
 patches_over_time$species <- as.factor(patches_over_time$species)
 patches_over_time$rep <- as.factor(patches_over_time$rep)
 patches_over_time$patch <- as.factor(patches_over_time$patch)
-patches_over_time$kernel_exp <- as.factor(round(patches_over_time$kernel_exp, 4))
+patches_over_time$kernel_exp <- factor(signif(patches_over_time$kernel_exp, 1),
+                                       levels = c(0, 1e-04, 3e-04, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1),
+                                       labels = c("0", "0.0001", "0.0003", "0.001", "0.003", "0.01", "0.03", "0.1", "0.3", "1"))
 patches_over_time <- patches_over_time |> 
   filter(spat_heterogeneity != 1) |> 
   mutate(kernel_exp = as.factor(kernel_exp),
@@ -564,6 +566,32 @@ patches_over_time |>
        y = "Mean fitness effects \n of competition",
        color = "Dispersal kernel\n exponent")
 
+
+fig_all_sinks <- patches_over_time |> 
+  filter(comp == comp_scenario, extirp_prob == 0.0) |> 
+  group_by(emigration, kernel_exp, spat_heterogeneity) |> 
+  summarize(Environmental = mean(sink_env),
+            Biotic = mean(sink_biotic),
+            Stochastic = mean(sink_stoch_demo)) |>
+  pivot_longer(cols = c(Environmental, Biotic, Stochastic), 
+               names_to = "sink_type",
+               values_to = "sink_pops") |> 
+  mutate(sink_type = factor(sink_type, c("Environmental", "Biotic", "Stochastic"))) |> 
+  ggplot(aes(x = emigration, y = sink_pops, color = kernel_exp)) + 
+  geom_point(alpha = 0.5) +
+  geom_line() +
+  scale_x_log10() +
+  scale_color_viridis_d(option = "B", end = .9) +
+  facet_grid(sink_type ~ spat_heterogeneity) +
+  labs(x = "Emigration rate", 
+       y = "Sink populations (mean)",
+       color = "Dispersal kernel\n exponent")
+
+ggsave(filename = paste0("figures/",comp_scenario,"_sinks_nodisturb.png"),
+       plot = fig_all_sinks, width = 6, height = 4, dpi = 500, bg = "white")
+ggsave(filename = paste0("figures/",comp_scenario,"_sinks_nodisturb.pdf"),
+       plot = fig_all_sinks, width = 6, height = 4)
+
 # now understand demographic effects
 fig_demo_sink_effects <- patches_over_time |> 
   filter(comp == comp_scenario, extirp_prob == 0) |> 
@@ -604,10 +632,11 @@ ggsave(filename = paste0("figures/",comp_scenario,"_demographic_nodisturb.png"),
 ggsave(filename = paste0("figures/",comp_scenario,"_demographic_nodisturb.pdf"),
        plot = fig_demog_effects, width = 6, height = 4)
 
-
 # combine abiotic and biotic in one graph
-fig_env_bio_filter <- fig_env_costs + theme(legend.position = "null") + 
-  fig_competition_intra + fig_competition_inter +
+fig_env_bio_filter <- 
+  fig_env_costs + theme(legend.position = "null") + 
+  fig_competition_intra + theme(legend.position = "null") + 
+  fig_competition_inter + 
   plot_layout(nrow = 3, guides = "collect") +
   plot_annotation(tag_levels = "A")
 ggsave(filename = paste0("figures/",comp_scenario,"_env_bio_filtering_nodisturb.png"),
