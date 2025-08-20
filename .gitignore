@@ -29,3 +29,4 @@ vignettes/*.pdf
 metacom-dispersal.Rproj
 .DS_Store
 errors.log
+sim_output/
