@@ -1,6 +1,6 @@
 library(tidyverse)
 source("simulations/metacom_functions.R")
-
+set.seed(10294)
 kernel <- function(x, k){
   return(10^((-k) * x))
 }
@@ -36,5 +36,30 @@ for (k in kernel_vals){
   
 }
 
+distance_df <- data.frame()
+for (k in kernel_vals){
+  
+  disp_matrix <- exp(-k * dist_matrix)
+  disp_matrix <- apply(disp_matrix, 1, function(x) x / sum(x))
+  
+  dispersers <- data.frame(disperers = sample(dist_matrix, size = 10000, replace = T, prob = disp_matrix))
+  available <- data.frame(landscape = as.numeric(as.matrix(dist(landscape))))
+  disperser_mean <- signif(mean(dispersers$disperers), 3)
+  landscape_mean <- signif(mean(available$landscape), 3)
+  
+  disp_landscape_df <- cbind.data.frame(dispersers, available) |> 
+    pivot_longer(cols = everything(), names_to = "subset", values_to = "distance") 
+    
+  disp_landscape_df$k <- signif(k, 2)
+  distance_df <- bind_rows(distance_df, disp_landscape_df)
 
+}
 
+distance_df |> 
+  ggplot(aes(x = distance, color = subset)) + 
+  geom_density(alpha = 0.25, linewidth = 1) +
+  theme_minimal() +
+  facet_wrap(~k, scales = "free_y", ncol = 3) +
+  labs(x = "Distance", y = "Density", color = "") +
+  theme(legend.position = c(.8, .1))
+ggsave("figures/disp_landscape_mismatch_all.png", height = 6, width = 8, dpi = 500)
