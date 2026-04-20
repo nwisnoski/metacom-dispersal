@@ -438,9 +438,14 @@ fig_env_costs <- patches_over_time |>
   filter(comp == comp_scenario, extirp_prob == 0) |> 
   mutate(tot_comp = (delta_env) / abundance_mean) |> 
   group_by(emigration, kernel_exp, spat_heterogeneity) |> 
-  summarize(comp_mean = mean(tot_comp)) |> 
-  ggplot(aes(x = emigration, y = comp_mean, color = kernel_exp)) + 
+  summarize(comp_mean = mean(tot_comp),
+            comp_se = sd(tot_comp)/10) |> 
+  ggplot(aes(x = emigration, y = comp_mean, 
+             ymin = comp_mean-comp_se,
+             ymax = comp_mean+comp_se,
+             color = kernel_exp)) + 
   geom_point(alpha = 0.5) +
+  geom_errorbar(alpha = 0.5) +
   geom_line() +
   scale_x_log10() +
   scale_color_viridis_d(option = "B", end = .9) +
@@ -491,9 +496,12 @@ fig_competition_intra <- patches_over_time |>
          inter_comp = (delta_bio_inter)/abundance_mean) |> 
   group_by(emigration, kernel_exp, spat_heterogeneity) |> 
   summarize(intra_comp_mean = mean(intra_comp),
-            inter_comp_mean = mean(inter_comp)) |> 
+            inter_comp_mean = mean(inter_comp),
+            intra_comp_se = sd(intra_comp)/10) |> 
   ggplot(aes(x = emigration, color = kernel_exp)) + 
   geom_point(aes(y = intra_comp_mean), alpha = 0.5) +
+  geom_errorbar(aes(ymin = intra_comp_mean-intra_comp_se,
+                    ymax = intra_comp_mean+intra_comp_se), alpha = 0.5) +
   geom_line(aes(y = intra_comp_mean), linetype = "solid") +
   
   scale_x_log10() +
@@ -509,9 +517,12 @@ fig_competition_inter <- patches_over_time |>
          inter_comp = (delta_bio_inter)/abundance_mean) |> 
   group_by(emigration, kernel_exp, spat_heterogeneity) |> 
   summarize(intra_comp_mean = mean(intra_comp),
-            inter_comp_mean = mean(inter_comp)) |> 
+            inter_comp_mean = mean(inter_comp),
+            inter_comp_se = sd(inter_comp)/10) |> 
   ggplot(aes(x = emigration, color = kernel_exp)) + 
   geom_point(aes(y = inter_comp_mean), alpha = 0.5) +
+  geom_errorbar(aes(ymin = inter_comp_mean-inter_comp_se,
+                    ymax = inter_comp_mean+inter_comp_se)) +
   geom_line(aes(y = inter_comp_mean), linetype = "solid") +
   
   scale_x_log10() +
