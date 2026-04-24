@@ -1,11 +1,6 @@
 # Set of functions related to metacommunity simulations run in 
 # the "metacom_dispersal-kernel.R" simulations
-# Not all are used, but some are present for flexibility in the code
 
-# generalized logistic function
-gen_logistic = function(x, A=0, K=1, B=1, nu=1, Q=1, C=1){
-  A + (K-A)/((C+Q*exp(-B*(x-0.5))^(1/nu)))
-}
 
 # dist.torus function from the package som.nn
 dist.torus <- function (coors) 
@@ -49,11 +44,8 @@ init_species <- function(species = 10,
                          kernel_exp = 0.1,
                          max_r = 5,
                          dispersal_rate = 0.1,
-                         survival = 0.8,
-                         germ = 0.5,
-                         responsive = FALSE,
-                         sb_sensitivity = 10,
-                         sb_maxgerm = 1){
+                         survival = 0,
+                         germ = 1){
   
   # generate niche optima
 
@@ -99,16 +91,8 @@ init_species <- function(species = 10,
     kernel_exp = kernel_exp,
     dispersal_rate = dispersal_rate,
     survival = survival,
-    germ = germ,
-    responsive = responsive,
-    sb_sensitivity = sb_sensitivity,
-    sb_maxgerm = sb_maxgerm
+    germ = germ
   )
-  
-  # matplot(sapply(X = 1:species, FUN = function(x) {
-  #     exp(-((species_traits$env_niche_optima[x]-seq(0, 1, length = 30))/(2*species_traits$env_niche_breadth[x]))^2)
-  #   })*rep(max_r,each = 30), 
-  #   type = "l", lty = 1, ylab = "r", xlab = "environment", ylim = c(0,max(max_r)))
   
   return(species_traits)
 
@@ -163,41 +147,7 @@ compute_r_xt <- function(species_traits = species_traits, env = env, species = s
   return(r_ixt)
 }
 
-# seed bank survival (not used in current simulations)
-survival <- function(N, species_traits){
-  s_prop <- species_traits$survival * (1-species_traits$germ)
-  if(nrow(species_traits) != ncol(N)) {stop("Dimensions off")}
-  
-  N_surv <- N * 0
-  for(i in 1:ncol(N)){
-    #N_surv[,i] <- N[,i] * s_prop[i]
-    N_surv[,i] <- rbinom(n = nrow(N), size = N[,i], prob = s_prop[i])
-  }
-  return(N_surv)
-}
 
-# seed germination (not used in current)
-germination <- function(N, species_traits, r){
-  g_prop <- species_traits$germ
-  if(nrow(species_traits) != ncol(N)) {stop("Dimensions off")}
-  
-  N_germ <- N * 0
-  for(i in 1:ncol(N)){ # loop over species 1:nspecies
-    if(species_traits$responsive[i]){
-      # plot(seq(0,1,by=0.0001), gen_logistic(seq(0,1,by=0.0001), A = .5, B = 10, K = 1), type = 'l')
-      germ_ix <- gen_logistic(r[,i]/species_traits$max_r[i], # local conditions in patch x for species i
-                              A = g_prop[i], # min germination rate for species i
-                              B = species_traits$sb_sensitivity[i], # sensitivity to env mismatch to trigger germ
-                              K = species_traits$sb_maxgerm[i]) # is the species bet-hedging even under good conditions
-      # plot(r[,i], germ_ix)
-      N_germ[,i] <- rbinom(n = nrow(N), size = N[,i], prob = germ_ix)
-    }
-    else {
-      N_germ[,i] <- rbinom(n = nrow(N), size = N[,i], prob = g_prop[i])
-    }
-  }
-  return(N_germ)
-}
 
 # competition function
 growth <- function(N, species_traits, r, int_mat){
@@ -330,87 +280,22 @@ env_generate <- function(landscape,
   
   env_mat <- env_mat + sim_ts_trend_noise
   
-  # spec.mtm(generate_noise_ts(a = 0, length = 10000, sd = temp_noise_sd), dtUnits = "year")
-  # spectrum(env_ts)
-  # 
+  
   
   env_mat <- (env_mat - min(env_mat)) / (max(env_mat) - min(env_mat))
-  # matplot(env_mat, type = "l")
   
   
   env_df <- tidyr::pivot_longer(cbind.data.frame(time = 1:timesteps, env_mat), cols = (1:ncol(env_mat)+1), names_to = "patch", values_to = "env")
-  # env_df %>% 
-  #   ggplot(aes(x = time, y= env, color = patch)) + geom_line(alpha = 0.2, show.legend = F) + theme_bw() + scale_color_viridis_d()
   
   return(env_df)
 }
 
 
-# env_generate <- function(landscape, x_dim, y_dim, spat_auto = 0.5, temp_auto = 0, timesteps = 1000, A, k, w, phi){
-#   grid <- list(x = seq(0, 100, length.out = 100), y = seq(0, 100, length.out = 100)) 
-#   
-#   repeat{
-#     obj <-fields::Exp.image.cov(grid = grid, theta=spat_auto, setup=TRUE)
-#     look <- fields::sim.rf(obj)
-#     image.plot( grid$x, grid$y, look) 
-#     points(landscape)
-#     # title("simulated gaussian field")
-#     
-#     sig_mat <- matrix(NA, nrow = timesteps, ncol = nrow(landscape))
-#     sig_mat[1,] <- look[cbind(landscape$x, landscape$y)]
-#     
-#     # sine wave params
-#     A <- A
-#     k <- k # wave number, wavelengths per unit distance
-#     w <- w # angular frequency, relates to speed of propagation, v = w/k
-#     phi <- phi # phase, where in the cycle oscillation is at t=0  
-#     
-#     for(patch in 1:nrow(landscape)){
-#       mean_cond <- sig_mat[1,patch]
-#       with_trend <- mean_cond + A*sin(k*landscape$x[patch] - w*(1:timesteps)) + A*sin(k*landscape$y[patch] - w*(1:timesteps)) + phi
-#       with_noise <- with_trend + generate_noise_ts(a = temp_auto, length = nrow(sig_mat), sd = 0.1)
-#       sig_mat[,patch] <- with_noise
-#       #plot(with_noise, type = 'l')
-#       #spec.mtm(with_noise)
-#       
-#     }
-#     sig_mat <- (sig_mat - min(sig_mat)) / (max(sig_mat) - min(sig_mat))
-#     if(max(sig_mat[1,]) - min(sig_mat[1,]) > 0.6){break}
-#   }
-#   sig_df <- tidyr::pivot_longer(cbind.data.frame(time = 1:timesteps, sig_mat), cols = (1:ncol(sig_mat)+1), names_to = "patch", values_to = "env")
-#   sig_df %>% 
-#     filter(as.numeric(patch) < 10) %>% 
-#     ggplot(aes(x = time, y= env, color = patch)) + geom_line(alpha = 0.8, show.legend = F) + theme_bw()
-#   
-#   return(sig_df)
-# }
-
-# anim <- sig_df %>% left_join(rownames_to_column(landscape, var = "patch")) %>% 
-#   ggplot() +
-#   geom_tile(mapping = aes(x = x, y = y, fill = env)) +
-#   transition_states(states = time) +
-#   theme_minimal() +
-#   scale_fill_viridis()
-# animate(anim, duration = 10)  
 
 # some error handling
 is_simple_error <- function(x) inherits(x, "simpleError")
 is_try_error <- function(x) inherits(x, "try-error")
 
 
-# geometric mean 
-gm_mean = function(x, na.rm=TRUE, zero.propagate = FALSE){
-  if(any(x < 0, na.rm = TRUE)){
-    return(NaN)
-  }
-  if(zero.propagate){
-    if(any(x == 0, na.rm = TRUE)){
-      return(0)
-    }
-    exp(mean(log(x), na.rm = na.rm))
-  } else {
-    exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
-  }
-}
 
 

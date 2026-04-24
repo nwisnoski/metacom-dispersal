@@ -11,9 +11,11 @@ library(doParallel)
 library(here)
 library(lubridate)
 source(here("simulations/metacom_functions.R"))
-source(here("analysis/metacommunity_variability_partitioning.R"))
 source(here("analysis/diversity_partitioning.R"))
 
+# The general metacommunity simulation model, which relies on functions from other scripts in the directory.
+# This script performs a metacommunity simulation for a single replicate (nreps = 1). 
+# More reps could be run here, or run multiple instances of this script to generate reps.
 
 # define simulation parameters
 nreps <- 1
@@ -24,12 +26,8 @@ species <- 40
 timesteps <- 100
 initialization <- 200
 burn_in <- 800
-full_grid <- FALSE
-write_dynamics <- FALSE
-
-# temporal environmental noise parameters
-temp_noise_color_vec = 0 #c(-0.8, 0, 0.8) # temporal autocorrelation, can range from -1 (blue noise) to 0 (white noise), to +1 (red noise)
-temp_noise_sd_vec = 0 #c(0, 0.1, 0.5)
+full_grid <- FALSE # TRUE if every patch in x by y grid should be a patch
+write_dynamics <- FALSE # TRUE if all dynamics should be written to disk
 
 # temporal trends (set cycles very high to have no trend)
 cycles <- 10 # how long are interannual cycles in years/timesteps?
@@ -41,29 +39,16 @@ phi <- 0 # phase, where in the cycle oscillation is at t=0
 spat_hetero_vec <- c(0, .1, 1000) # spatial heterogeneity, higher numbers, steeper slopes
 
 # competition scenarios
-conditions <- c("equal", "stable") # can also be "equal" or "priority"
+conditions <- c("stable") # can also be "equal" or "priority"
 niche_breadth <- 0.25
 
-# dispersal, dormancy, and disturbance rates
+# dispersal, disturbance rates
 disp_rates <- 10^seq(-5, 0, length.out = 20)
-kernel_vals <- c(0, 10^seq(-4, 0, length.out = 9)) # c(0, .1, .25, .5)
-germ_fracs <- 1
-surv_fracs <- 0
-sb_responsive <- c(TRUE, FALSE) # is germination responsive to the environment
-sb_sensitivity <- 10 # bigger is steeper transition with env condition
-sb_maxgerm <- .9 # with responsive sb, does every individual (1) or say, most (.9) germinate? i.e. is there bet hedging?
+kernel_vals <- c(0, 10^seq(-4, 0, length.out = 9))
 disturbance_rates <- c(0, 0.01)
 
 # find all combinations of parameters
 params <- expand.grid(disp_rates, kernel_vals, disturbance_rates)
-# empty, no seedbank
-seedbank_params <- data.frame(germ = c(1),
-                              surv = c(0))
-seedbank_params <- cbind.data.frame(seedbank_params, 
-                                    responsive = rep(sb_responsive, each = nrow(seedbank_params)))
-seedbank_params <- seedbank_params[1,] # just focus on no seedbank
-
-# source("simulations/test_params.R")
 
 # initialize simulation run
 cl <- parallel::makeCluster(16)
@@ -82,25 +67,21 @@ for(rep in 1:nreps){
     expand.grid(x = 1:x_dim, y = 1:y_dim)
   } else init_landscape(patches = patches, x_dim = x_dim, y_dim = y_dim)
   
-  for(temp_noise_color in temp_noise_color_vec){
-    for(temp_noise_sd in temp_noise_sd_vec){
+  # For a given landscape, loop over spatial heterogeneity conditions
       for(spat_heterogeneity in spat_hetero_vec){
-        
         
         # make new landscape, environmental data, and draw new competition coefficients
         
         
         env_df <- env_generate(landscape = landscape, 
-                               spat_heterogeneity = spat_heterogeneity, # smaller this is compared to A, the more overlap there is among patches
-                               temp_noise_color = temp_noise_color, # temporal noise autocorrelation, can range from -1 (blue noise) to 0 (white noise), to +1 (red noise)
-                               temp_noise_sd = temp_noise_sd, # temp noise standard deviation, more or less variable
+                               spat_heterogeneity = spat_heterogeneity, 
                                timesteps = timesteps+burn_in, A=A, w=w, phi=phi)
         env_plot <- ggplot(env_df, aes(x = time, y = env, color = patch)) + 
           geom_line(alpha = 0.5, show.legend = FALSE) + 
-          labs(title = paste0("rep = ",rep,", noise color = ", temp_noise_color, ", noise sd = ", temp_noise_sd,", spat het = ", spat_heterogeneity, ", \nA = ", A, ", w = ", w, ", phi = ", phi)) +
+          labs(title = paste0("rep = ",rep,", spat het = ", spat_heterogeneity, ", \nA = ", A, ", w = ", signif(w,2), ", phi = ", phi)) +
           theme_minimal() +
           scale_x_continuous(limits = c(800, 900))
-        ggsave(plot = env_plot, filename = paste0("figures/env_plots/env_plot_", rep,"_", temp_noise_color,"_", temp_noise_sd,"_", spat_heterogeneity,"_", as.character(format(Sys.time(), "%X")), ".pdf"), width = 6, height = 4)
+        ggsave(plot = env_plot, filename = paste0("figures/env_plots/env_plot_", rep,"_", spat_heterogeneity,"_", as.character(format(Sys.time(), "%X")), ".pdf"), width = 6, height = 4)
         
         
         for(x in conditions){
@@ -132,15 +113,8 @@ for(rep in 1:nreps){
           
           print(paste("Simulating condition:", x))
           
-          for(j in 1:nrow(seedbank_params)){
-            germ = seedbank_params[j,1]
-            surv = seedbank_params[j,2]
-            responsive = seedbank_params[j,3]
-              
-              print(paste("germ =", germ, "; surv =", surv, "; spat_het =", spat_heterogeneity))
-              
-              # up until this point, parameters are getting set up for this run 
-              
+          # up until this point, parameters are getting set up for this run 
+          
               dynamics_list <- foreach(p = 1:nrow(params), 
                                        .inorder = FALSE,
                                        .errorhandling = 'pass',
@@ -161,29 +135,21 @@ for(rep in 1:nreps){
                                            species_traits <- init_species(species, 
                                                                           dispersal_rate = disp,
                                                                           kernel_exp = kernel_exp,
-                                                                          germ = germ,
-                                                                          survival = surv,
                                                                           env_niche_breadth = niche_breadth, 
-                                                                          env_niche_optima = "even",
-                                                                          responsive = responsive,
-                                                                          sb_sensitivity = sb_sensitivity,
-                                                                          sb_maxgerm = sb_maxgerm)
+                                                                          env_niche_optima = "even"
+                                                                          )
                                            
                                            disp_array <- generate_dispersal_matrices(landscape, species, patches, species_traits, torus = FALSE)
-                                           # int_mat <- species_int_mat(species = species, intra = intra,
-                                           #                            min_inter = min_inter, max_inter = max_inter,
-                                           #                            comp_scaler = comp_scaler, plot = TRUE)
                                            
                                            
                                            N <- init_community(initialization = initialization, species = species, patches = patches)
                                            N <- N + 1 # no initial dispersal limitation
-                                           D <- N*0
+                                           
                                            
                                            for(i in 1:(initialization + burn_in + timesteps)){
                                              if(i <= initialization){
                                                if(i %in% seq(10, 200, by = 10)){
                                                  N <- N + matrix(rpois(n = species*patches, lambda = 0.5), nrow = patches, ncol = species)
-                                                 D <- D + matrix(rpois(n = species*patches, lambda = 0.5), nrow = patches, ncol = species)
                                                }
                                                env <- env_df$env[env_df$time == 1]
                                              } else {
@@ -194,33 +160,27 @@ for(rep in 1:nreps){
                                              r <- compute_r_xt(species_traits, env = env, species = species)
                                              
                                              
-                                             # who germinates? Binomial distributed, fixed or responsive
-                                             N_germ <- germination(N + D, species_traits, r)
-                                             
                                              # record fitness component after environmental effects
                                              # several components will be recorded
-                                             fitness_max <- N_germ %*% diag(species_traits$max_r)
-                                             fitness_env <- r * N_germ
+                                             fitness_max <- N %*% diag(species_traits$max_r)
+                                             fitness_env <- r * N
                                              fitness_env[is.na(fitness_env)] <- 0
                                              
                                              
                                              # of germinating fraction, grow via BH model
-                                             N_hat <- growth(N_germ, species_traits, r, int_mat)
+                                             N_hat <- growth(N, species_traits, r, int_mat)
                                              
-                                             comp_partitions <- get_comp_effects(N_germ, species_traits, r, int_mat)
+                                             comp_partitions <- get_comp_effects(N, species_traits, r, int_mat)
                                              
                                              # next extract the actual biotic effect, ie "full" option of previous function
                                              fitness_biotic <- N_hat # N after accounting for growth and competition in each patch
                                              fitness_biotic[is.na(fitness_biotic)] <- 0
                                              
-                                             # of those that didn't germinate, compute seed bank survival via binomial draw
-                                             D_hat <- survival((N + D - N_germ), species_traits) 
-                                             
                                              N_hat[N_hat < 0] <- 0
                                              
                                              N_hat_deterministic <- N_hat # snapshot before demographic stochasticity
                                              
-                                             N_hat <- matrix(rpois(n = species*patches, lambda = N_hat), ncol = species, nrow = patches) # poisson draw on aboveground
+                                             N_hat <- matrix(rpois(n = species*patches, lambda = N_hat), ncol = species, nrow = patches) # poisson draw on populations
                                              
                                              # record number of stochastic extinctions and fitness after accounting for demographic stochasticity
                                              stoch_extinct_demo <- (N_hat == 0) & (N_hat_deterministic != 0)
@@ -253,16 +213,15 @@ for(rep in 1:nreps){
                                                } else {rep(0, patches)}
                                              })
                                              
-                                             rescued_by_dispersal <- (N_germ != 0) & (N_hat == 0) & (I > 0)
+                                             rescued_by_dispersal <- (N != 0) & (N_hat == 0) & (I > 0)
                                              extinct_by_emigration <- ((N_hat - E) <= 0) & (N_hat != 0)
                                              
                                              # measure per capita population growth after dispersal
                                              fitness_dispersal <- (N_hat - E + I) # N after emigration and immigration
                                              fitness_dispersal[is.na(fitness_dispersal)] <- 0
-                                             colonizations <- (N_germ == 0) & ((N_hat - E + I) > 0)
+                                             colonizations <- (N == 0) & ((N_hat - E + I) > 0)
                                              
                                              N <- N_hat - E + I
-                                             D <- D_hat 
                                              
                                              # next impose disturbance
                                              N_before_disturb <- N
@@ -300,9 +259,6 @@ for(rep in 1:nreps){
                                                                       # traits
                                                                       emigration = disp,
                                                                       kernel_exp = kernel_exp,
-                                                                      germ_rate = germ,
-                                                                      surv_rate = surv,
-                                                                      responsive = responsive,
                                                                       
                                                                       comp = x,
                                                                       rep = rep,
@@ -311,8 +267,6 @@ for(rep in 1:nreps){
                                                                       time = i-initialization-burn_in, 
                                                                       env = env,
                                                                       extirp_prob = extirp_prob,
-                                                                      temp_noise_color = temp_noise_color,
-                                                                      temp_noise_sd = temp_noise_sd,
                                                                       spat_heterogeneity = spat_heterogeneity,
                                                                       spat_mean = mean(env),
                                                                       spat_sd = sd(env)
@@ -332,8 +286,8 @@ for(rep in 1:nreps){
                                                        file = here(paste0("sim_output/dynamics/disp_kernel_", tstamp ,".csv")))
                                            }
                                            
-                                           # here is where do temporal beta and variability partitioning
-                                           
+                                           # here is where do diversity partitioning
+                                           # these functions were loaded above from other scripts
                                            new <- dynamics_out %>% 
                                              dplyr::select(N, patch, species, time) %>%  
                                              dplyr::filter(time > 0) %>%
@@ -347,8 +301,6 @@ for(rep in 1:nreps){
                                              metacomm_tsdata[,,m] <- as.matrix(temp)
                                            }
                                            
-                                           # partition variability
-                                           par <- var.partition(metacomm_tsdata)
                                            
                                            
                                            # partition diversity 
@@ -357,18 +309,6 @@ for(rep in 1:nreps){
                                            # beta div calculations
                                            beta <- beta.div.calc(metacomm_tsdata)
                                            
-                                           # local diversity-stability calculations
-                                           local_dsr <- div.stab.comp(metacomm_tsdata)
-                                           
-                                           env_temp_cv_mean <- dynamics_out |> 
-                                             group_by(patch) |> 
-                                             summarize(env_temp_cv = sd(env)/mean(env)) |> 
-                                             summarize(env_temp_cv_mean = mean(env_temp_cv))
-                                           
-                                           env_spat_cv_mean <- dynamics_out |> 
-                                             group_by(time) |> 
-                                             summarize(env_spat_cv = sd(env)/mean(env)) |> 
-                                             summarize(env_spat_cv_mean = mean(env_spat_cv))
                                            
                                            # summarize local pop dynamics
                                            dynamics_out <- dynamics_out |> 
@@ -379,7 +319,7 @@ for(rep in 1:nreps){
                                            
                                            # over time, per patch
                                            pop_dyn_temporal_per_patch <- dynamics_out |> 
-                                             group_by(rep, species, patch, emigration, kernel_exp, germ_rate, surv_rate, responsive, extirp_prob, comp, spat_heterogeneity) |> 
+                                             group_by(rep, species, patch, emigration, kernel_exp, extirp_prob, comp, spat_heterogeneity) |> 
                                              left_join(select(species_traits, species, 
                                                               env_niche_optima, env_niche_breadth), by = "species") |> 
                                              summarize(abundance_mean = mean(N),
@@ -422,7 +362,7 @@ for(rep in 1:nreps){
                                            
                                            # across space, per time
                                            pop_dyn_spatial_per_time <- dynamics_out |> 
-                                             group_by(rep, species, time, emigration, kernel_exp, germ_rate, surv_rate, responsive, extirp_prob, comp, spat_heterogeneity) |> 
+                                             group_by(rep, species, time, emigration, kernel_exp, extirp_prob, comp, spat_heterogeneity) |> 
                                              left_join(select(species_traits, species, 
                                                               env_niche_optima, env_niche_breadth), by = "species") |> 
                                              summarize(abundance_mean = mean(N),
@@ -473,44 +413,18 @@ for(rep in 1:nreps){
                                              condition = x,
                                              disp_rate = params[p,1],
                                              kernel_exp = params[p,2],
-                                             germ_rate = germ,
-                                             surv_rate = surv,
-                                             responsive = responsive,
-                                             disturb_rate = params[p,3],
-                                             temp_noise_color = temp_noise_color,
-                                             temp_noise_sd = temp_noise_sd,
-                                             spat_heterogeneity = spat_heterogeneity,
-                                             env_temp_cv_mean = env_temp_cv_mean,
-                                             env_spat_cv_mean = env_spat_cv_mean,
                                              
-                                             CV_S_L = par[1],
-                                             CV_C_L = par[2],
-                                             CV_S_R = par[3],
-                                             CV_C_R = par[4],
-                                             phi_S_L2R = par[5],
-                                             phi_C_L2R = par[6],
-                                             phi_S2C_L = par[7],
-                                             phi_S2C_R = par[8],
+                                             disturb_rate = params[p,3],
+                                             spat_heterogeneity = spat_heterogeneity,
+                                             
+                                             
                                              alpha_div = div[1],
                                              beta_div = div[2], 
                                              gamma_div = div[3],
                                              beta_spatial = beta$mean_beta_spatial,
-                                             beta_temporal = beta$mean_beta_temporal,
-                                             local_dsr_richness = local_dsr$local_mean_richness,
-                                             local_dsr_cv = local_dsr$local_mean_cv
+                                             beta_temporal = beta$mean_beta_temporal
+                                             
                                            )
-                                           
-                                           
-                                           # output should contain:
-                                           # all the parameters and settings and identifiable for this run
-                                           # rep specific = rep
-                                           # condition specific = x 
-                                           # responses that are condition specific and calculated using time_series_i: var metrics, synchrony metrics, spatial diversity
-                                           # patch specific things: dispersal_rate = disp, disturbance_rate = disturbance_rates, kernel = kernal_vals (don't want to use these because too specific)
-                                           # spatial diversity at final time point (average of last few points?), would use time_series_i
-                                           # the four variability metrics: population, metapop, community, metacommunity? 
-                                           # Do we need to save the synchrony metrics too? - they are outputs so yes
-                                           # temporal beta diversity - BD de caceres and legendre paper
                                            
                                            # check that "output_summary" is 1 row, and a lot of columns
                                            
@@ -539,20 +453,19 @@ for(rep in 1:nreps){
               
               
               
-            }
         }
       }
-    }
-  }
 }
+
+
 end_sims <- Sys.time()
 tstamp <- str_replace_all(end_sims, " ", "_") %>% 
   str_replace_all(":", "") |> 
   str_replace("[.]", "_")
 dir.create(paste0("sim_output/", lubridate::date(tstamp)))
 write_csv(x = dynamics_total, col_names = TRUE, 
-          file = here(paste0("sim_output/", lubridate::date(tstamp), "/variability_partitioning_disp_kernel_", tstamp ,"_summary.csv")))
+          file = here(paste0("sim_output/", lubridate::date(tstamp), "/diversity_partitioning_disp_kernel_", tstamp ,"_summary.csv")))
 write_csv(x = spat_dyn_over_time_total, col_names = TRUE, 
-          file = here(paste0("sim_output/", lubridate::date(tstamp), "/variability_partitioning_disp_kernel_", tstamp ,"_spat_per_time.csv")))
+          file = here(paste0("sim_output/", lubridate::date(tstamp), "/diversity_partitioning_disp_kernel_", tstamp ,"_spat_per_time.csv")))
 write_csv(x = temp_dyn_per_patch_total, col_names = TRUE, 
-          file = here(paste0("sim_output/", lubridate::date(tstamp), "/variability_partitioning_disp_kernel_", tstamp ,"_temp_per_patch.csv")))
+          file = here(paste0("sim_output/", lubridate::date(tstamp), "/diversity_partitioning_disp_kernel_", tstamp ,"_temp_per_patch.csv")))
