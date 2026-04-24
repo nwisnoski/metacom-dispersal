@@ -5,6 +5,9 @@ kernel <- function(x, k){
   return(10^((-k) * x))
 }
 
+# Figure S2: Visualize connectivity for a landscape under
+# differing dispersal kernel exponents
+
 landscape <- init_landscape(patches = 100, x_dim = 100, y_dim = 100)
 
 dist_matrix <- as.matrix(dist(landscape))
