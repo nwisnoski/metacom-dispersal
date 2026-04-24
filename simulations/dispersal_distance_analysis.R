@@ -1,15 +1,20 @@
 library(tidyverse)
 source("simulations/metacom_functions.R")
 
+# This script generates a distribution of all pairwise distances in the landscape
+# and then compares them to the sampling distribution of realized dispersal
+# kernels that arise from different dispersal kernel exponents. 
+
+# Negative exponential kernel
 kernel <- function(x, k){
   return(10^((-k) * x))
 }
 
 landscape <- init_landscape(patches = 100, x_dim = 100, y_dim = 100)
 
-hist(dist(landscape))
-
 dist_matrix <- as.matrix(dist(landscape))
+
+# loop over the kernel values used in the simulations, and generate figure
 kernel_vals <- c(0, 10^seq(-4, 0, length.out = 9))
 for (k in kernel_vals){
   

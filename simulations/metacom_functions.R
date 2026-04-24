@@ -1,9 +1,13 @@
+# Set of functions related to metacommunity simulations run in 
+# the "metacom_dispersal-kernel.R" simulations
+# Not all are used, but some are present for flexibility in the code
+
 # generalized logistic function
 gen_logistic = function(x, A=0, K=1, B=1, nu=1, Q=1, C=1){
   A + (K-A)/((C+Q*exp(-B*(x-0.5))^(1/nu)))
 }
 
-# dist.torus function from the packages som.nn
+# dist.torus function from the package som.nn
 dist.torus <- function (coors) 
 {
   x <- coors[, 1]
@@ -21,7 +25,7 @@ dist.torus <- function (coors)
 }
 
 
-# initialize_landscape
+# initialize landscape to form non-overlapping patches
 init_landscape <- function(patches, x_dim = 100, y_dim = 100){
   repeat{
     landscape <- data.frame(x = sample(1:x_dim, size = patches, replace = T),
@@ -34,6 +38,10 @@ init_landscape <- function(patches, x_dim = 100, y_dim = 100){
   return(landscape)
 }
 
+
+# create species with given trait distributions according to parameters
+# specified in the main simulation script 
+# modified from Thompson et al. 2020
 
 init_species <- function(species = 10, 
                          env_niche_optima = "random",
@@ -106,6 +114,7 @@ init_species <- function(species = 10,
 
 }
 
+# initialize community with poisson-distributed colonization process
 init_community <- function(initialization = 200, species = 10, patches = 100){
   
   N <- matrix(rpois(n = species * patches, lambda = 0.5), nrow = patches, ncol = species)
@@ -113,7 +122,8 @@ init_community <- function(initialization = 200, species = 10, patches = 100){
   return(N)
 }
 
-
+# compute dispersal matrices for each species
+# stored as an array with different slices for each species
 generate_dispersal_matrices <- function(landscape, species, 
                                         patches = patches, 
                                         species_traits, torus = TRUE){
@@ -141,6 +151,7 @@ generate_dispersal_matrices <- function(landscape, species,
   
 }
 
+# local growth, gaussian fit to environment
 compute_r_xt <- function(species_traits = species_traits, env = env, species = species){
   
   # get env matrix at time t
@@ -152,6 +163,7 @@ compute_r_xt <- function(species_traits = species_traits, env = env, species = s
   return(r_ixt)
 }
 
+# seed bank survival (not used in current simulations)
 survival <- function(N, species_traits){
   s_prop <- species_traits$survival * (1-species_traits$germ)
   if(nrow(species_traits) != ncol(N)) {stop("Dimensions off")}
@@ -164,6 +176,7 @@ survival <- function(N, species_traits){
   return(N_surv)
 }
 
+# seed germination (not used in current)
 germination <- function(N, species_traits, r){
   g_prop <- species_traits$germ
   if(nrow(species_traits) != ncol(N)) {stop("Dimensions off")}
@@ -186,6 +199,7 @@ germination <- function(N, species_traits, r){
   return(N_germ)
 }
 
+# competition function
 growth <- function(N, species_traits, r, int_mat){
   N_growth <- N*0
   #germ <- matrix(species_traits$germ, nrow = 1)
@@ -201,6 +215,7 @@ growth <- function(N, species_traits, r, int_mat){
 }
 
 
+# calculations for competition fitness effects
 get_comp_effects <- function(N, species_traits, r, int_mat){
   N_growth <- N*0
   
@@ -244,33 +259,7 @@ get_comp_effects <- function(N, species_traits, r, int_mat){
   return(comp_effects)
 }
 
-# # THompson model
-# env_generate <- function(landscape, env.df, env1Scale = 500, timesteps = 1000, plot = TRUE){
-#   if (missing(env.df)){
-#     repeat {
-#       model <- RandomFields::RMexp(var=0.5, scale=env1Scale) + # with variance 4 and scale 10
-#         RandomFields::RMnugget(var=0) + # nugget
-#         RandomFields::RMtrend(mean=0.05) # and mean
-#       
-#       RF <- RandomFields::RFsimulate(model = model,x = landscape$x*10, y = landscape$y*10, T = 1:timesteps, spConform=FALSE)
-#       env.df <- data.frame(env1 = vegan::decostand(RF,method = "range"), patch = 1:nrow(landscape), time = rep(1:timesteps, each = nrow(landscape)))
-#       env.initial <- env.df[env.df$time == 1,]
-#       if((max(env.initial$env1)-min(env.initial$env1)) > 0.6) {break}
-#     }
-#   } else {
-#     if(all.equal(names(env.df), c("env1", "patch", "time")) != TRUE) stop("env.df must be a dataframe with columns: env1, patch, time")
-#   }
-#   
-#   if(plot == TRUE){
-#     g<-ggplot2::ggplot(env.df, aes(x = time, y = env1, group = patch, color = factor(patch)))+
-#       ggplot2::geom_line()+
-#       scale_color_viridis_d(guide=F)
-#     print(g)
-#   }
-#   
-#   return(env.df)
-# }
-
+# compute interaction strengths for competition
 species_int_mat <- function(species, intra = 1, min_inter = 0, max_inter = 1.5, int_matrix, comp_scaler = 0.05, plot = TRUE){
   if (missing(int_matrix)){
     int_mat <- matrix(runif(n = species*species, min = min_inter, max = max_inter), nrow = species, ncol = species)
@@ -299,7 +288,7 @@ species_int_mat <- function(species, intra = 1, min_inter = 0, max_inter = 1.5, 
 }
 
 
-# new environmental functions:
+# environmental noise process
 generate_noise_ts <- function(a, length, sd = 1){
   sd = sd
   sig_vec <- NULL
@@ -313,7 +302,7 @@ generate_noise_ts <- function(a, length, sd = 1){
 }
 
 
-# simpler env simulator
+# simulate 2D linear environment with temporal fluctuations
 env_generate <- function(landscape, 
                          spat_heterogeneity = 0.5, 
                          temp_noise_color = 0,
