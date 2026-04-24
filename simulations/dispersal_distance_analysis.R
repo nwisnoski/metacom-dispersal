@@ -38,7 +38,7 @@ for (k in kernel_vals){
          title = paste("Dispersal kernel exponent, k =", signif(k,3)),
          subtitle = paste0("Mean inter-patch distance = ", landscape_mean,"; mean dispersal distance = ",disperser_mean))
   
-  ggsave(filename = paste0("figures/disp_landscape_mismatch_k",k,".png"), width = 6, height = 6, dpi = 500)
+  ggsave(filename = paste0("figures/FigS1/disp_landscape_mismatch_k",k,".png"), width = 6, height = 6, dpi = 500)
   
 }
 
@@ -68,4 +68,4 @@ distance_df |>
   facet_wrap(~k, scales = "free_y", ncol = 3) +
   labs(x = "Distance", y = "Density", color = "") +
   theme(legend.position = c(.8, .1))
-ggsave("figures/disp_landscape_mismatch_all.png", height = 6, width = 8, dpi = 500)
+ggsave("figures/FigS1/disp_landscape_mismatch_all.png", height = 6, width = 8, dpi = 500)
