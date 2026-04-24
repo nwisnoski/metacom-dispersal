@@ -7,8 +7,6 @@ kernel <- function(x, k){
 
 landscape <- init_landscape(patches = 100, x_dim = 100, y_dim = 100)
 
-hist(dist(landscape))
-
 dist_matrix <- as.matrix(dist(landscape))
 kernel_vals <- c(0, 10^seq(-4, 0, length.out = 9))
 for (k in kernel_vals){
@@ -18,7 +16,7 @@ for (k in kernel_vals){
   
   connectivity <- graph_from_adjacency_matrix(disp_matrix, mode = "undirected", weighted = TRUE, diag = FALSE)
   
-  png(paste0("figures/connectivity_k",k,".png"), width = 6, height = 6, units = "in", res = 500)
+  png(paste0("figures/FigS2/connectivity_Li",k,".png"), width = 6, height = 6, units = "in", res = 500)
   plot.igraph(connectivity, 
               layout = as.matrix(landscape), 
               rescale = FALSE,
@@ -64,7 +62,7 @@ plot_connectivity <- function(k){
 }
 
 
-png("figures/connectivity_k_multi.png", width = 6, height = 6, units = "in", res = 500)
+png("figures/FigS2/connectivity_Li_multi.png", width = 6, height = 6, units = "in", res = 500)
 
 par(mfrow = c(2, 2),
     mar = c(4, 4, 3, 1))  # give a bit of top margin for labels
