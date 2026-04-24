@@ -1,0 +1,9 @@
+rep = 1
+temp_noise_color = 0
+temp_noise_sd = 0
+spat_heterogeneity = 0.3
+j = 1
+p = 10
+x = "stable"
+initialization <- 200
+burn_in <- 800

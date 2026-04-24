@@ -35,7 +35,7 @@ for (k in kernel_vals){
     geom_density(alpha = 0.25, linewidth = 1) +
     theme_minimal() +
     labs(x = "Distance", y = "Density", color = "",
-         title = paste("Dispersal kernel exponent, k =", signif(k,3)),
+         title = paste("Dispersal kernel exponent, Li =", signif(k,3)),
          subtitle = paste0("Mean inter-patch distance = ", landscape_mean,"; mean dispersal distance = ",disperser_mean))
   
   ggsave(filename = paste0("figures/FigS1/disp_landscape_mismatch_k",k,".png"), width = 6, height = 6, dpi = 500)
