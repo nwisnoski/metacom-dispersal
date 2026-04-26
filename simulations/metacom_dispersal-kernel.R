@@ -293,12 +293,18 @@ for(rep in 1:nreps){
                                            new <- dynamics_out %>% 
                                              dplyr::select(N, patch, species, time) %>%  
                                              dplyr::filter(time > 0) %>%
-                                             pivot_wider(., names_from = "time", values_from = "N") # this form means species are first dim and time is second dim
+                                             dplyr::arrange(patch, species, time) %>%
+                                             tidyr::pivot_wider(
+                                               names_from = time,
+                                               values_from = N,
+                                               values_fill = 0
+                                             ) # this form means species are first dim and time is second dim
                                            
                                            metacomm_tsdata <- array(NA, c(species, timesteps, patches)) # array N*T*M where N = abundance of each species, T = timeseries, M= patch
                                            for(m in 1:patches){
                                              temp <- new %>%
                                                dplyr::filter(patch == m) %>%
+                                               dplyr::arrange(species) %>%
                                                dplyr::select(-species, -patch)
                                              metacomm_tsdata[,,m] <- as.matrix(temp)
                                            }
