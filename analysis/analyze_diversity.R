@@ -6,7 +6,7 @@ library(data.table)
 # Make figures for the simulation output from simulations/metacom_dispersal-kernel.R"
 theme_set(theme_bw())
 
-subfolder <- "sim_output/2025-06-23//"
+subfolder <- "sim_output/2026-04-26/"
 comp_scenario <- "stable"
 
 # load and combine reps
