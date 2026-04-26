@@ -17,6 +17,8 @@ source(here("analysis/diversity_partitioning.R"))
 # This script performs a metacommunity simulation for a single replicate (nreps = 1). 
 # More reps could be run here, or run multiple instances of this script to generate reps.
 
+set.seed(654987321)
+
 # define simulation parameters
 nreps <- 1
 x_dim <- 100
