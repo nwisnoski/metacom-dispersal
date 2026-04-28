@@ -53,7 +53,7 @@ beta.div.calc <- function(metacomm_tsdata){
   for(site in 1:ts_dims["sites"]){
     site_ts <- metacomm_tsdata[,,site]
     tbs <- t(site_ts)
-    tbs <- safe_hellinger(sbs)
+    tbs <- safe_hellinger(tbs)
     tot_ss <- sum((scale(tbs, center = TRUE, scale = FALSE))^2)
     beta_div <- tot_ss / (nrow(tbs)-1)
     
