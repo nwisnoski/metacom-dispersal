@@ -6,7 +6,7 @@ library(data.table)
 # Make figures for the simulation output from simulations/metacom_dispersal-kernel.R"
 theme_set(theme_bw())
 
-subfolder <- "sim_output/2026-04-26/"
+subfolder <- "sim_output/2026-04-28/"
 comp_scenario <- "stable"
 
 # load and combine reps
@@ -275,3 +275,4 @@ ggsave(filename = paste0("figures/Fig5.png"),
        plot = fig_demog, width = 8, height = 6, dpi = 500, bg = "white")
 ggsave(filename = paste0("figures/Fig5.pdf"),
        plot = fig_demog, width = 8, height = 6)
+
