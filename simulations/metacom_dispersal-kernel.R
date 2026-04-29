@@ -25,7 +25,7 @@ patches <- 100
 species <- 40
 timesteps <- 100
 initialization <- 200
-burn_in <- 800
+burn_in <- 1000
 full_grid <- FALSE # TRUE if every patch in x by y grid should be a patch
 write_dynamics <- FALSE # TRUE if all dynamics should be written to disk
 
