@@ -25,6 +25,9 @@ Additionally, the following scripts generate figures in the analysis:
 ## Generate figures
 1. Run `./simulations/metacom_dispersal-kernel.R` locally or deploy `./simulations/run_simulations.sh` to a slurm-based cluster modified for your particular needs, with your preferred level of replication.
 2. Output will be placed in `./sim_output` organized by date.
-3. Run `./analysis/analyze_diversity.R` to generate figures.
+3. Run `./analysis/analyze_diversity.R` to generate figures 2-5 in the main text.
 4. Figures will populate in `./figures`.
+5. Run `./appendix/metacom_dispersal-kernel_20sp.R` and `./appendix/metacom_dispersal-kernel_75sp.R`; check that they are organized in correct subdirectories (`/appendix/sim_output/[date]/20 or 75 species`). Then update paths and run `./appendix/analyze_diversity_specnum-variation.R` to generate Appendix S1 figures S1-S2.
+6. Run `./appendix/dispersal_distance_analysis.R` to generate Appendix S1 figure S3.
+7. Run `./appendix/visualize_connectivity.R` to generate Appendix S1 figure S4. 
 
