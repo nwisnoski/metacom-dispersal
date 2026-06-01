@@ -111,14 +111,14 @@ heat_alpha_gamma_combined <- heat_alpha + heat_gamma +
   plot_layout(ncol = 1) +
   plot_annotation(tag_levels = "A")
 ggsave(paste0("figures/Fig2.pdf"), plot = heat_alpha_gamma_combined, width = 8, height = 8)
-ggsave(paste0("figures/Fig2.png"), plot = heat_alpha_gamma_combined, width = 8, height = 8, dpi = 500, bg = "white")
+ggsave(paste0("figures/Fig2.tif"), plot = heat_alpha_gamma_combined, width = 8, height = 8, dpi = 700, bg = "white")
 
 # Fig 3
 heat_beta_combined <- heat_beta_spatial + heat_beta_temporal +
   plot_layout(ncol = 1)  +
   plot_annotation(tag_levels = "A")
 ggsave(paste0("figures/Fig3.pdf"), plot = heat_beta_combined, width = 8, height = 8)
-ggsave(paste0("figures/Fig3.png"), plot = heat_beta_combined, width = 8, height = 8, dpi = 500, bg = "white")
+ggsave(paste0("figures/Fig3.tif"), plot = heat_beta_combined, width = 8, height = 8, dpi = 700, bg = "white")
 
 
 # Figs 4-5 Partition fitness effects
@@ -220,9 +220,9 @@ fig_env_bio_filter <-
   plot_layout(nrow = 3, guides = "collect") +
   plot_annotation(tag_levels = "A")
 ggsave(filename = paste0("figures/Fig4.png"),
-       plot = fig_env_bio_filter, width = 7, height = 7, dpi = 500, bg = "white")
+       plot = fig_env_bio_filter, width = 7, height = 7, dpi = 700, bg = "white")
 ggsave(filename = paste0("figures/Fig4.pdf"),
-       plot = fig_env_bio_filter, width = 7, height = 7, dpi = 500)
+       plot = fig_env_bio_filter, width = 7, height = 7)
 
 
 
@@ -272,7 +272,7 @@ fig_demog <- fig_demo_extinctions + fig_dispersal_fitness_effects +
   plot_layout(nrow = 2, guides = "collect") +
   plot_annotation(tag_levels = "A")
 ggsave(filename = paste0("figures/Fig5.png"),
-       plot = fig_demog, width = 8, height = 6, dpi = 500, bg = "white")
+       plot = fig_demog, width = 8, height = 6, dpi = 700, bg = "white")
 ggsave(filename = paste0("figures/Fig5.pdf"),
        plot = fig_demog, width = 8, height = 6)
 

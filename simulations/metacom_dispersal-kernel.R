@@ -81,7 +81,7 @@ for(rep in 1:nreps){
           labs(title = paste0("rep = ",rep,", spat het = ", spat_heterogeneity, ", \nA = ", A, ", w = ", signif(w,2), ", phi = ", phi)) +
           theme_minimal() +
           scale_x_continuous(limits = c(800, 900))
-        ggsave(plot = env_plot, filename = paste0("figures/env_plots/env_plot_", rep,"_", spat_heterogeneity,"_", as.character(format(Sys.time(), "%X")), ".pdf"), width = 6, height = 4)
+        #ggsave(plot = env_plot, filename = paste0("figures/env_plots/env_plot_", rep,"_", spat_heterogeneity,"_", as.character(format(Sys.time(), "%X")), ".pdf"), width = 6, height = 4)
         
         
         for(x in conditions){
